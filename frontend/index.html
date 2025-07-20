@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="NexusChat - A modern Discord-style messaging application" />
+    <meta name="keywords" content="chat, messaging, discord, real-time, communication" />
+    <meta name="author" content="NexusChat Team" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nexuschat.com/" />
+    <meta property="og:title" content="NexusChat" />
+    <meta property="og:description" content="A modern Discord-style messaging application" />
+    <meta property="og:image" content="/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://nexuschat.com/" />
+    <meta property="twitter:title" content="NexusChat" />
+    <meta property="twitter:description" content="A modern Discord-style messaging application" />
+    <meta property="twitter:image" content="/og-image.png" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#5865F2" />
+    <meta name="msapplication-TileColor" content="#5865F2" />
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <title>NexusChat - Modern Messaging Platform</title>
+    
+    <style>
+      /* Loading screen styles */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #181a20 0%, #23272f 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      .loading-logo {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #5865F2 0%, #57F287 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        animation: pulse 2s infinite;
+      }
+      
+      .loading-logo::before {
+        content: "N";
+        font-size: 32px;
+        font-weight: bold;
+        color: white;
+        font-family: 'Inter', sans-serif;
+      }
+      
+      .loading-text {
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 8px;
+      }
+      
+      .loading-subtext {
+        color: #b9bbbe;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #40444b;
+        border-top: 3px solid #5865F2;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-top: 24px;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Hide loading screen when app is ready */
+      .app-loaded #loading-screen {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="loading-logo"></div>
+      <div class="loading-text">NexusChat</div>
+      <div class="loading-subtext">Loading your messaging experience...</div>
+      <div class="loading-spinner"></div>
+    </div>
+    
+    <!-- Root element for React app -->
+    <div id="root"></div>
+    
+    <!-- Script to remove loading screen when app is ready -->
+    <script>
+      // Remove loading screen when React app mounts
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          document.body.classList.add('app-loaded');
+        }, 1000);
+      });
+      
+      // Fallback: remove loading screen after 3 seconds
+      setTimeout(function() {
+        document.body.classList.add('app-loaded');
+      }, 3000);
+    </script>
+    
+    <!-- Vite entry point -->
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html> 

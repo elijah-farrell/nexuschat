@@ -1,6 +1,45 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { query, execute } = require('../../config/database');
+const { sanitizeUsername, sanitizePassword, sanitizeString } = require('../../utils/sanitize');
+
+// Track failed login attempts
+const failedAttempts = new Map(); // username -> { count: number, lockedUntil: timestamp }
+
+// Check if account is locked
+const isAccountLocked = (username) => {
+  const attempts = failedAttempts.get(username);
+  if (!attempts) return false;
+  
+  if (attempts.lockedUntil && Date.now() < attempts.lockedUntil) {
+    return true;
+  }
+  
+  // Clear if lock has expired
+  if (attempts.lockedUntil && Date.now() >= attempts.lockedUntil) {
+    failedAttempts.delete(username);
+  }
+  
+  return false;
+};
+
+// Record failed login attempt
+const recordFailedAttempt = (username) => {
+  const attempts = failedAttempts.get(username) || { count: 0 };
+  attempts.count++;
+  
+  // Lock account after 5 failed attempts for 15 minutes
+  if (attempts.count >= 5) {
+    attempts.lockedUntil = Date.now() + (15 * 60 * 1000); // 15 minutes
+  }
+  
+  failedAttempts.set(username, attempts);
+};
+
+// Clear failed attempts on successful login
+const clearFailedAttempts = (username) => {
+  failedAttempts.delete(username);
+};
 
 // Register new user
 const register = async (req, res) => {
@@ -12,12 +51,17 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
+    // Sanitize inputs
+    const sanitizedUsername = sanitizeUsername(username);
+    const sanitizedPassword = sanitizePassword(password);
+    const sanitizedName = name ? sanitizeString(name) : null;
+
     // Username validation
-    if (username.length < 3 || username.length > 20) {
+    if (sanitizedUsername.length < 3 || sanitizedUsername.length > 20) {
       return res.status(400).json({ error: 'Username must be between 3 and 20 characters' });
     }
 
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    if (!/^[a-zA-Z0-9_]+$/.test(sanitizedUsername)) {
       return res.status(400).json({ error: 'Username can only contain letters, numbers, and underscores' });
     }
 
@@ -25,17 +69,14 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    if (password.length > 128) {
+    if (sanitizedPassword.length > 128) {
       return res.status(400).json({ error: 'Password is too long' });
     }
-
-    // Use name only if provided, otherwise leave as null
-    const displayName = name || null;
 
     // Check if username already exists (case-insensitive)
     const [existingUser] = await query(
       'SELECT id FROM users WHERE LOWER(username) = ?',
-      [username.toLowerCase()]
+      [sanitizedUsername.toLowerCase()]
     );
 
     if (existingUser.length > 0) {
@@ -43,17 +84,17 @@ const register = async (req, res) => {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(sanitizedPassword, 10);
 
     // Create user (do not set name on registration)
     const [result] = await query(
       'INSERT INTO users (username, password) VALUES (?, ?)',
-      [username, hashedPassword]
+      [sanitizedUsername, hashedPassword]
     );
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: result.insertId, username },
+      { userId: result.insertId, username: sanitizedUsername },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -64,7 +105,7 @@ const register = async (req, res) => {
       token,
       user: {
         id: result.insertId,
-        username,
+        username: sanitizedUsername,
         email: null,
         bio: null,
         profile_picture: null,
@@ -87,28 +128,42 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
+    // Sanitize inputs
+    const sanitizedUsername = sanitizeUsername(username);
+    const sanitizedPassword = sanitizePassword(password);
+
     // Basic input validation
-    if (username.length > 50 || password.length > 128) {
+    if (sanitizedUsername.length > 50 || sanitizedPassword.length > 128) {
       return res.status(400).json({ error: 'Invalid input length' });
+    }
+
+    // Check if account is locked
+    if (isAccountLocked(sanitizedUsername)) {
+      return res.status(429).json({ error: 'Account temporarily locked. Please try again later.' });
     }
 
     // Find user
     const [users] = await query(
       'SELECT * FROM users WHERE username = ?',
-      [username]
+      [sanitizedUsername]
     );
 
     if (users.length === 0) {
+      recordFailedAttempt(sanitizedUsername);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const user = users[0];
 
     // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(sanitizedPassword, user.password);
     if (!isValidPassword) {
+      recordFailedAttempt(sanitizedUsername);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Clear failed attempts on successful login
+    clearFailedAttempts(sanitizedUsername);
 
     // Update user status to online
     await query(

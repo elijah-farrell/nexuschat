@@ -9,6 +9,7 @@ import { ServerProvider } from './contexts/ServerContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/user/ProtectedRoute';
 import { SocketProvider } from './contexts/SocketContext';
+import SocketLoading from './components/ui/SocketLoading';
 
 const App = () => {
   const [mode, setMode] = useState(() => {
@@ -86,19 +87,21 @@ const App = () => {
           <ServerProvider>
             <NotificationProvider>
               <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <Routes>
-                  <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
-                  <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
-                  <Route
-                    path="/*"
-                    element={
-                      <ProtectedRoute>
-                        <AppLayout mode={mode} setMode={setMode} />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
+                <SocketLoading>
+                  <Routes>
+                    <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
+                    <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
+                    <Route
+                      path="/*"
+                      element={
+                        <ProtectedRoute>
+                          <AppLayout mode={mode} setMode={setMode} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/" />} />
+                  </Routes>
+                </SocketLoading>
               </Router>
             </NotificationProvider>
           </ServerProvider>

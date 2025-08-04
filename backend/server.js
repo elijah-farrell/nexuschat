@@ -71,14 +71,24 @@ app.use((req, res, next) => {
 // Rate limiting for security
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 login attempts per windowMs
-  message: 'Too many login attempts from this IP, please try again later.'
+  max: 20, // limit each IP to 20 login attempts per windowMs (increased from 5)
+  message: { error: 'Too many login attempts from this IP, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many login attempts from this IP, please try again later.' });
+  }
 });
 
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  message: { error: 'Too many requests from this IP, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many requests from this IP, please try again later.' });
+  }
 });
 
 app.use('/api/auth', authLimiter);

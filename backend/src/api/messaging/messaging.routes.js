@@ -19,7 +19,7 @@ router.post('/group-dms/:dmId/members', auth, messagingController.addGroupMember
 router.delete('/group-dms/:dmId/members/:userId', auth, messagingController.removeGroupMember);
 
 // ===== ENHANCED FEATURES =====
-router.post('/messages/:messageId/reactions', auth, messagingController.addMessageReaction);
+
 
 // ===== ACTIVITY ROUTES =====
 router.get('/activity/dms', auth, messagingController.getDMActivity);

@@ -48,11 +48,6 @@ A real-time messaging application built with React, Node.js, and Socket.IO - ins
 - **DM Messages**: Message content and metadata
 - **Friends**: Mutual friendship relationships
 - **Friend Requests**: Pending friend requests
-- **Message Reactions**: Emoji reactions on messages
-- **Message Attachments**: File attachments for messages
-- **Servers**: Server system (for future features)
-- **Channels**: Server channels
-- **Server Messages**: Messages in server channels
 
 ## 🚀 Deployment
 

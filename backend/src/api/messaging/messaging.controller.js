@@ -528,40 +528,7 @@ const updateGroupDMName = async (req, res) => {
 
 // ===== ENHANCED MESSAGE FEATURES =====
 
-// Add reaction to a message
-const addMessageReaction = async (req, res) => {
-  try {
-    const { messageId } = req.params;
-    const currentUserId = req.user.id;
-    const { emoji } = req.body;
 
-    if (!emoji) {
-      return res.status(400).json({ error: 'Emoji is required' });
-    }
-
-    // Check if user has access to the message
-    const message = query(`
-      SELECT m.channel_id, dm.dm_id, m.sender_id, dm.sender_id as dm_sender_id
-      FROM messages m
-      LEFT JOIN dm_messages dm ON dm.id = ?
-      WHERE m.id = ? OR dm.id = ?
-    `, [messageId, messageId, messageId]);
-
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
-
-    // Add reaction (you'll need to create a reactions table)
-    // For now, we'll just return success
-    res.json({
-      success: true,
-      message: 'Reaction added successfully'
-    });
-  } catch (error) {
-    console.error('Add reaction error:', error);
-    res.status(500).json({ error: 'Failed to add reaction' });
-  }
-};
 
 // ===== ENHANCED DM FUNCTIONS =====
 
@@ -701,7 +668,7 @@ module.exports = {
   updateGroupDMName,
 
   // Enhanced Message Features
-  addMessageReaction,
+
 
   // Enhanced DM Functions
   getEnhancedDMs,

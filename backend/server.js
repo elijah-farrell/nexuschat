@@ -98,7 +98,7 @@ io.on('connection', (socket) => {
   // Update user status to online (only if this is the first session)
   if (userSockets.get(socket.userId).size === 1) {
     query(
-      'UPDATE users SET status = ?, last_seen = NOW() WHERE id = ?',
+      'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
       ['online', socket.userId]
     ).then(() => {
       // Emit user online event to all clients
@@ -163,7 +163,7 @@ io.on('connection', (socket) => {
         
         // Mark user offline immediately since no sessions remain
         query(
-          'UPDATE users SET status = ?, last_seen = NOW() WHERE id = ?',
+          'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
           ['offline', socket.userId]
         ).then(() => {
           // Emit user offline event to all clients

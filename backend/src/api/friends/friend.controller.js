@@ -436,7 +436,7 @@ const getFriendActivity = async (req, res) => {
     `, [currentUserId, currentUserId, currentUserId]);
 
     // Get recent friend status changes (online/offline)
-    const [statusActivity] = await query(`
+    const statusActivity = query(`
       SELECT 
         u.id,
         u.username,
@@ -447,7 +447,7 @@ const getFriendActivity = async (req, res) => {
       FROM friends f
       INNER JOIN users u ON (f.user_id = u.id OR f.friend_id = u.id)
       WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?
-      AND u.last_seen > DATE_SUB(NOW(), INTERVAL 7 DAY)
+      AND u.last_seen > datetime('now', '-7 days')
       ORDER BY u.last_seen DESC
       LIMIT 10
     `, [currentUserId, currentUserId, currentUserId]);

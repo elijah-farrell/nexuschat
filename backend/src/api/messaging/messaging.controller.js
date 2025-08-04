@@ -179,7 +179,7 @@ const getUnreadMessageCount = async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    const [result] = await query(`
+    const result = query(`
       SELECT COUNT(*) as unread_count
       FROM dm_messages dm
       INNER JOIN dm_members dm_m ON dm.dm_id = dm_m.dm_id
@@ -202,7 +202,7 @@ const getDMActivity = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Get recent DM conversations with last message info
-    const [dmConversations] = await query(`
+    const dmConversations = query(`
       SELECT 
         dc.id,
         dc.created_at as conversation_created,
@@ -230,7 +230,7 @@ const getDMActivity = async (req, res) => {
     `, [currentUserId, currentUserId, currentUserId, currentUserId]);
 
     // Get recent DM messages (last 24 hours)
-    const [recentDMMessages] = await query(`
+    const recentDMMessages = query(`
       SELECT 
         dm.id,
         dm.content,
@@ -245,13 +245,13 @@ const getDMActivity = async (req, res) => {
       INNER JOIN dm_conversations dc ON dm.dm_id = dc.id
       INNER JOIN dm_members dm_m ON dc.id = dm_m.dm_id
       INNER JOIN users u ON dm.sender_id = u.id
-      WHERE dm_m.user_id = ? AND dm.created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+      WHERE dm_m.user_id = ? AND dm.created_at > datetime('now', '-24 hours')
       ORDER BY dm.created_at DESC
       LIMIT 15
     `, [currentUserId]);
 
     // Get unread message summary
-    const [unreadSummary] = await query(`
+    const unreadSummary = query(`
       SELECT 
         COUNT(*) as total_unread,
         COUNT(DISTINCT dm.dm_id) as conversations_with_unread

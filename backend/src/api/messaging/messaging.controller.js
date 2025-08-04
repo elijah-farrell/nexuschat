@@ -5,7 +5,7 @@ const { query } = require('../../config/database');
 // Get all users
 const getUsers = async (_req, res) => {
   try {
-    const [users] = await query(
+    const users = query(
       'SELECT id, username, name, profile_picture, status, last_seen FROM users ORDER BY name ASC'
     );
 
@@ -24,7 +24,7 @@ const getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const [users] = await query(
+    const users = query(
       'SELECT id, username, name, profile_picture, status, last_seen FROM users WHERE id = ?',
       [userId]
     );
@@ -48,7 +48,7 @@ const getUserById = async (req, res) => {
 // List all DMs for a user (with members and type)
 const getAllDMs = async (req, res) => {
   const userId = req.user.id;
-  const [dms] = await query(`
+  const dms = query(`
     SELECT dc.id, dc.type, dc.name, dc.created_by, dc.created_at
     FROM dm_conversations dc
     INNER JOIN dm_members dm ON dc.id = dm.dm_id
@@ -56,7 +56,7 @@ const getAllDMs = async (req, res) => {
     ORDER BY dc.created_at DESC
   `, [userId]);
   for (const dm of dms) {
-    const [members] = await query(`
+    const members = query(`
       SELECT u.id, u.username, u.name, u.profile_picture
       FROM dm_members m
       INNER JOIN users u ON m.user_id = u.id
@@ -71,11 +71,11 @@ const getAllDMs = async (req, res) => {
 const getDMInfo = async (req, res) => {
   const userId = req.user.id;
   const { dmId } = req.params;
-  const [membership] = await query('SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?', [dmId, userId]);
+  const membership = query('SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?', [dmId, userId]);
   if (!membership.length) return res.status(403).json({ error: 'Not a member' });
-  const [dm] = await query('SELECT * FROM dm_conversations WHERE id = ?', [dmId]);
+  const dm = query('SELECT * FROM dm_conversations WHERE id = ?', [dmId]);
   if (!dm.length) return res.status(404).json({ error: 'DM not found' });
-  const [members] = await query(`
+  const members = query(`
     SELECT u.id, u.username, u.name, u.profile_picture
     FROM dm_members m
     INNER JOIN users u ON m.user_id = u.id
@@ -88,9 +88,9 @@ const getDMInfo = async (req, res) => {
 const getDMMessages = async (req, res) => {
   const userId = req.user.id;
   const { dmId } = req.params;
-  const [membership] = await query('SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?', [dmId, userId]);
+  const membership = query('SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?', [dmId, userId]);
   if (!membership.length) return res.status(403).json({ error: 'Not a member' });
-  const [messages] = await query(`
+  const messages = query(`
     SELECT m.*, u.username, u.name, u.profile_picture
     FROM dm_messages m
     INNER JOIN users u ON m.sender_id = u.id
@@ -104,7 +104,7 @@ const getDMMessages = async (req, res) => {
 const getOrCreateDM = async (req, res) => {
   const userId = req.user.id;
   const otherUserId = req.params.userId;
-  const [existing] = await query(`
+  const existing = query(`
     SELECT dc.id FROM dm_conversations dc
     INNER JOIN dm_members m1 ON dc.id = m1.dm_id
     INNER JOIN dm_members m2 ON dc.id = m2.dm_id
@@ -114,9 +114,9 @@ const getOrCreateDM = async (req, res) => {
   if (existing.length) {
     dmId = existing[0].id;
   } else {
-    const [result] = await query('INSERT INTO dm_conversations (type, created_by) VALUES (\'dm\', ?)', [userId]);
+    const result = query('INSERT INTO dm_conversations (type, created_by) VALUES (\'dm\', ?)', [userId]);
     dmId = result.insertId;
-    await query('INSERT INTO dm_members (dm_id, user_id) VALUES (?, ?), (?, ?)', [dmId, userId, dmId, otherUserId]);
+    query('INSERT INTO dm_members (dm_id, user_id) VALUES (?, ?), (?, ?)', [dmId, userId, dmId, otherUserId]);
   }
   res.json({ success: true, dm_id: dmId });
 };
@@ -133,7 +133,7 @@ const sendDMMessage = async (req, res) => {
     }
 
     // Check if user is member of this DM conversation
-    const [membership] = await query(
+    const membership = query(
       'SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?',
       [dmId, senderId]
     );
@@ -142,13 +142,13 @@ const sendDMMessage = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const [result] = await query(
+    const result = query(
       'INSERT INTO dm_messages (dm_id, sender_id, content, message_type) VALUES (?, ?, ?, ?)',
       [dmId, senderId, content.trim(), messageType]
     );
 
     // Get the created message with user info
-    const [messages] = await query(`
+    const messages = query(`
       SELECT dm.*, u.username, u.name, u.profile_picture
       FROM dm_messages dm
       INNER JOIN users u ON dm.sender_id = u.id
@@ -282,10 +282,10 @@ const createGroupDM = async (req, res) => {
     return res.status(400).json({ error: 'Group name and at least 2 members required' });
   }
   const allMemberIds = memberIds.includes(userId) ? memberIds : [userId, ...memberIds];
-  const [result] = await query('INSERT INTO dm_conversations (type, name, created_by) VALUES (\'group\', ?, ?)', [name, userId]);
+  const result = query('INSERT INTO dm_conversations (type, name, created_by) VALUES (\'group\', ?, ?)', [name, userId]);
   const dmId = result.insertId;
   const memberValues = allMemberIds.map(uid => [dmId, uid]);
-  await query('INSERT INTO dm_members (dm_id, user_id) VALUES ?', [memberValues]);
+  query('INSERT INTO dm_members (dm_id, user_id) VALUES ?', [memberValues]);
   res.status(201).json({ success: true, dm_id: dmId });
 };
 
@@ -301,7 +301,7 @@ const addGroupMembers = async (req, res) => {
     }
 
     // Check if user is member of the group DM
-    const [membership] = await query(
+    const membership = query(
       'SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?',
       [dmId, currentUserId]
     );
@@ -311,7 +311,7 @@ const addGroupMembers = async (req, res) => {
     }
 
     // Check if it's a group DM
-    const [conversation] = await query(
+    const conversation = query(
       'SELECT type FROM dm_conversations WHERE id = ?',
       [dmId]
     );
@@ -322,7 +322,7 @@ const addGroupMembers = async (req, res) => {
 
     // Add new members
     const memberValues = memberIds.map(userId => [dmId, userId]);
-    await query(
+    query(
       'INSERT IGNORE INTO dm_members (dm_id, user_id) VALUES ?',
       [memberValues]
     );
@@ -344,7 +344,7 @@ const removeGroupMember = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Check if user is member of the group DM
-    const [membership] = await query(
+    const membership = query(
       'SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?',
       [dmId, currentUserId]
     );
@@ -354,7 +354,7 @@ const removeGroupMember = async (req, res) => {
     }
 
     // Check if it's a group DM
-    const [conversation] = await query(
+    const conversation = query(
       'SELECT type, created_by FROM dm_conversations WHERE id = ?',
       [dmId]
     );
@@ -368,7 +368,7 @@ const removeGroupMember = async (req, res) => {
       return res.status(403).json({ error: 'Only group creator can remove members' });
     }
 
-    await query(
+    query(
       'DELETE FROM dm_members WHERE dm_id = ? AND user_id = ?',
       [dmId, userId]
     );
@@ -390,7 +390,7 @@ const getGroupDMDetails = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Check if user is member of the DM
-    const [membership] = await query(
+    const membership = query(
       'SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?',
       [dmId, currentUserId]
     );
@@ -399,7 +399,7 @@ const getGroupDMDetails = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const [groupDetails] = await query(`
+    const groupDetails = query(`
       SELECT 
         dc.id,
         dc.name,
@@ -449,7 +449,7 @@ const updateGroupDMName = async (req, res) => {
     }
 
     // Check if user is creator of the group DM
-    const [conversation] = await query(
+    const conversation = query(
       'SELECT created_by FROM dm_conversations WHERE id = ? AND type = "group"',
       [dmId]
     );
@@ -462,7 +462,7 @@ const updateGroupDMName = async (req, res) => {
       return res.status(403).json({ error: 'Only group creator can update name' });
     }
 
-    await query(
+    query(
       'UPDATE dm_conversations SET name = ? WHERE id = ?',
       [name.trim(), dmId]
     );
@@ -491,7 +491,7 @@ const addMessageReaction = async (req, res) => {
     }
 
     // Check if user has access to the message
-    const [message] = await query(`
+    const message = query(`
       SELECT m.channel_id, dm.dm_id, m.sender_id, dm.sender_id as dm_sender_id
       FROM messages m
       LEFT JOIN dm_messages dm ON dm.id = ?
@@ -522,7 +522,7 @@ const getEnhancedDMs = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Get all DM conversations with enhanced info
-    const [dms] = await query(`
+    const [dms] = query(`
       SELECT 
         dc.id,
         dc.type,
@@ -581,7 +581,7 @@ const getEnhancedDMs = async (req, res) => {
 
     // Attach members array to each DM
     for (const dm of dms) {
-      const [members] = await query(`
+      const [members] = query(`
         SELECT u.id, u.username, u.name, u.profile_picture
         FROM dm_members m
         INNER JOIN users u ON m.user_id = u.id
@@ -605,7 +605,7 @@ const markDMAsRead = async (req, res) => {
   const userId = req.user.id;
   const dmId = req.params.dmId;
   try {
-    await query(
+    query(
       `UPDATE dm_messages SET is_read = 1 WHERE dm_id = ? AND sender_id != ?`,
       [dmId, userId]
     );

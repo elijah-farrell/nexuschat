@@ -382,7 +382,7 @@ const getUserProfile = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Get user profile (excluding sensitive info like password and email)
-    const [users] = await query(
+    const users = query(
       'SELECT id, username, name, bio, profile_picture, banner_color, status, last_seen, created_at FROM users WHERE id = ?',
       [userId]
     );
@@ -394,7 +394,7 @@ const getUserProfile = async (req, res) => {
     const user = users[0];
 
     // Check if current user and viewed user are friends
-    const [friendRows] = await query(
+    const friendRows = query(
       `SELECT created_at FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)`,
       [currentUserId, userId, userId, currentUserId]
     );
@@ -525,25 +525,25 @@ const getUserStats = async (req, res) => {
     const userId = req.user.id;
 
     // Get message count
-    const [messageCount] = await query(
+    const messageCount = query(
       'SELECT COUNT(*) as count FROM dm_messages WHERE sender_id = ?',
       [userId]
     );
 
     // Get friend count
-    const [friendCount] = await query(
+    const friendCount = query(
       'SELECT COUNT(*) as count FROM friends WHERE user_id = ?',
       [userId]
     );
 
     // Get DM conversation count
-    const [dmCount] = await query(
+    const dmCount = query(
       'SELECT COUNT(*) as count FROM dm_members WHERE user_id = ?',
       [userId]
     );
 
     // Get account age
-    const [userData] = await query(
+    const userData = query(
       'SELECT created_at FROM users WHERE id = ?',
       [userId]
     );

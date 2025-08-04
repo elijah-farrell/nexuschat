@@ -88,8 +88,8 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
     }
   }, [
     loading,
-    friendActivity.friendRequests.length,
-    dmActivity.unreadSummary.total_unread
+    friendActivity?.friendRequests?.length || 0,
+    dmActivity?.unreadSummary?.total_unread || 0
   ]);
 
   // Force tabs to recalculate layout when data changes
@@ -119,7 +119,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
       
       return () => timers.forEach(timer => clearTimeout(timer));
     }
-  }, [loading, friendActivity.friendRequests.length, dmActivity.unreadSummary.total_unread, activeTab]);
+  }, [loading, friendActivity?.friendRequests?.length || 0, dmActivity?.unreadSummary?.total_unread || 0, activeTab]);
 
   // Force indicator update when activeTab changes
   useEffect(() => {
@@ -148,7 +148,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
   // Update lastSeenMap only when a user's status transitions to offline
   useEffect(() => {
     const newLastSeen = {};
-    friendActivity.statusActivity.forEach(friend => {
+    friendActivity?.statusActivity?.forEach(friend => {
       const prevStatus = prevStatusesRef.current.get(friend.id);
       const currentStatus = getLiveStatus(friend);
       if (prevStatus && prevStatus !== 'offline' && currentStatus === 'offline') {
@@ -160,7 +160,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
     if (Object.keys(newLastSeen).length > 0) {
       setLastSeenMap(prev => ({ ...prev, ...newLastSeen }));
     }
-  }, [userStatuses, friendActivity.statusActivity]);
+  }, [userStatuses, friendActivity?.statusActivity]);
 
   // Remove tabRenderKey, indicatorStyle, tabLabelRefs, friendsTabLabelRef, tabsRef, and all related useEffects
 
@@ -267,9 +267,9 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
 
   const getActivityScore = () => {
     let score = 0;
-    score += friendActivity.friends.length * 10;
-    score += friendActivity.friendRequests.filter(r => r.status === 'pending').length * 5;
-    score += dmActivity.unreadSummary.total_unread * 2;
+    score += friendActivity?.friends?.length * 10 || 0;
+    score += friendActivity?.friendRequests?.filter(r => r.status === 'pending').length * 5 || 0;
+    score += dmActivity?.unreadSummary?.total_unread || 0;
     return Math.min(score, 100);
   };
 
@@ -498,10 +498,10 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
               <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary' }}>{friendActivity.friends.length}</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary' }}>{friendActivity?.friends?.length || 0}</Typography>
                     <Typography color="text.secondary">Friends</Typography>
                   </Box>
-                  <Badge badgeContent={friendActivity.friendRequests.filter(r => r.status === 'pending').length} color="error">
+                  <Badge badgeContent={friendActivity?.friendRequests?.filter(r => r.status === 'pending').length || 0} color="error">
                     <Avatar sx={{ bgcolor: '#1976d2' }}><PersonAddIcon /></Avatar>
                   </Badge>
                 </Box>
@@ -526,10 +526,10 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
               <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary' }}>{dmActivity.unreadSummary.total_unread}</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary' }}>{dmActivity?.unreadSummary?.total_unread || 0}</Typography>
                     <Typography color="text.secondary">Unread Messages</Typography>
                   </Box>
-                  <Badge badgeContent={dmActivity.unreadSummary.conversations_with_unread} color="primary">
+                  <Badge badgeContent={dmActivity?.unreadSummary?.conversations_with_unread || 0} color="primary">
                     <Avatar sx={{ bgcolor: '#f57c00' }}><MessageIcon /></Avatar>
                   </Badge>
                 </Box>
@@ -553,7 +553,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
           ) : (
             <>
               <Tabs
-                key={`home-tabs-${friendActivity.friendRequests.length}-${dmActivity.unreadSummary.total_unread}-${loading}-${activeTab}`}
+                key={`home-tabs-${friendActivity?.friendRequests?.length || 0}-${dmActivity?.unreadSummary?.total_unread || 0}-${loading}-${activeTab}`}
                 value={activeTab}
                 onChange={handleTabChange}
                 variant="scrollable"
@@ -581,9 +581,9 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                 }}
                 action={tabsRef}
               >
-                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><PersonAddIcon />Friends{friendActivity.friendRequests.filter(r => r.status === 'pending').length > 0 && (<Chip label={friendActivity.friendRequests.filter(r => r.status === 'pending').length} size="small" color="error" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
+                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><PersonAddIcon />Friends{friendActivity?.friendRequests?.filter(r => r.status === 'pending').length > 0 && (<Chip label={friendActivity?.friendRequests?.filter(r => r.status === 'pending').length} size="small" color="error" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
                 <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><GroupIcon />Servers</Box>} />
-                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><MessageIcon />Messages{dmActivity.unreadSummary.total_unread > 0 && (<Chip label={dmActivity.unreadSummary.total_unread} size="small" color="primary" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
+                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><MessageIcon />Messages{dmActivity?.unreadSummary?.total_unread > 0 && (<Chip label={dmActivity?.unreadSummary?.total_unread} size="small" color="primary" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
               </Tabs>
               <CardContent sx={{ 
                 p: { xs: 0.5, sm: 1, md: 2 },
@@ -664,15 +664,15 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                       )}
                       {/* Check if there are any friends at all */}
                       {(() => {
-                        const hasBestFriends = dmActivity.dmConversations
-                          .filter(dm => dm.type === 'dm' && (dm.total_messages || 0) >= 5).length > 0;
-                        const hasRecentlyOnline = friendActivity.statusActivity.length > 0;
-                        const hasRecentlyAdded = friendActivity.friends
-                          .filter(friend => friend.friend_id !== user?.id)
-                          .filter(friend => now - new Date(friend.friendship_date).getTime() < 1000 * 60 * 60 * 48).length > 0;
+                        const hasBestFriends = dmActivity?.dmConversations
+                          ?.filter(dm => dm.type === 'dm' && (dm.total_messages || 0) >= 5).length > 0 || false;
+                        const hasRecentlyOnline = friendActivity?.statusActivity?.length > 0 || false;
+                        const hasRecentlyAdded = friendActivity?.friends
+                          ?.filter(friend => friend.friend_id !== user?.id)
+                          ?.filter(friend => now - new Date(friend.friendship_date).getTime() < 1000 * 60 * 60 * 48).length > 0 || false;
                         
                         // Check if user has any friends at all (not just recent ones)
-                        const hasAnyFriendsAtAll = friendActivity.friends.length > 0;
+                        const hasAnyFriendsAtAll = friendActivity?.friends?.length > 0 || false;
                         
                         if (!hasAnyFriendsAtAll) {
                           return (
@@ -690,18 +690,18 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                         return null;
                       })()}
                       {/* Recently Online */}
-                      {friendActivity.statusActivity.length > 0 && (
+                      {friendActivity?.statusActivity?.length > 0 && (
                         <Box>
                           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <CircleIcon sx={{ color: '#57F287' }} />
                             Recently Online
                           </Typography>
                           <List sx={{ p: 0 }}>
-                            {friendActivity.statusActivity
-                              .filter(friend => friend.id !== user?.id)
-                              .filter(friend => now - new Date(friend.last_seen).getTime() < 1000 * 60 * 60 * 24 * 7)
-                              .slice(0, 5)
-                              .map((friend, index) => (
+                            {friendActivity?.statusActivity
+                              ?.filter(friend => friend.id !== user?.id)
+                              ?.filter(friend => now - new Date(friend.last_seen).getTime() < 1000 * 60 * 60 * 24 * 7)
+                              ?.slice(0, 5)
+                              ?.map((friend, index) => (
                                 <Grow in={true} timeout={700 + index * 100} key={friend.id}>
                                   <ListItem 
                                     sx={modernListItemSx}
@@ -730,29 +730,29 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                                     />
                                   </ListItem>
                                 </Grow>
-                              ))}
+                              )) || []}
                           </List>
                         </Box>
                       )}
                       {/* Recently Added */}
-                      {friendActivity.friends
-                        .filter(friend => friend.friend_id !== user?.id)
-                        .filter(friend => now - new Date(friend.friendship_date).getTime() < 1000 * 60 * 60 * 48)
-                        .sort((a, b) => new Date(b.friendship_date) - new Date(a.friendship_date))
-                        .slice(0, 5)
-                        .length > 0 && (
+                      {friendActivity?.friends
+                        ?.filter(friend => friend.friend_id !== user?.id)
+                        ?.filter(friend => now - new Date(friend.friendship_date).getTime() < 1000 * 60 * 60 * 48)
+                        ?.sort((a, b) => new Date(b.friendship_date) - new Date(a.friendship_date))
+                        ?.slice(0, 5)
+                        ?.length > 0 && (
                           <Box sx={{ mt: 3 }}>
                             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                               <AccessTimeIcon sx={{ color: '#5865F2' }} />
                               Recently Added
                             </Typography>
                             <List sx={{ p: 0 }}>
-                              {friendActivity.friends
-                                .filter(friend => friend.friend_id !== user?.id)
-                                .filter(friend => now - new Date(friend.friendship_date).getTime() < 1000 * 60 * 60 * 48)
-                                .sort((a, b) => new Date(b.friendship_date) - new Date(a.friendship_date))
-                                .slice(0, 5)
-                                .map(friend => (
+                              {friendActivity?.friends
+                                ?.filter(friend => friend.friend_id !== user?.id)
+                                ?.filter(friend => now - new Date(friend.friendship_date).getTime() < 1000 * 60 * 60 * 48)
+                                ?.sort((a, b) => new Date(b.friendship_date) - new Date(a.friendship_date))
+                                ?.slice(0, 5)
+                                ?.map(friend => (
                                   <ListItem
                                     key={friend.friend_id}
                                     sx={simpleListItemSx}

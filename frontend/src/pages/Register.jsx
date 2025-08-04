@@ -13,7 +13,8 @@ import {
   Step,
   StepLabel,
   Zoom,
-  Alert
+  Alert,
+  InputAdornment
 } from '@mui/material';
 import { 
   Person, 
@@ -22,7 +23,9 @@ import {
   VisibilityOff,
   DarkMode,
   LightMode,
-  PersonAdd
+  PersonAdd,
+  ArrowBack,
+  ArrowForward
 } from '@mui/icons-material';
 import PropTypes from 'prop-types';
 import { useAuth } from '../contexts/AuthContext';
@@ -367,6 +370,18 @@ const Register = ({ mode, setMode }) => {
                     mr: 1, 
                     color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'
                   }} />
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
                 )
               }}
               inputProps={{ autoComplete: 'off' }}
@@ -388,6 +403,18 @@ const Register = ({ mode, setMode }) => {
                     mr: 1, 
                     color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)'
                   }} />
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
                 )
               }}
               inputProps={{ autoComplete: 'off' }}

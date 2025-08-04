@@ -11,13 +11,16 @@ import {
   CircularProgress,
   IconButton,
   Fade,
-  Zoom
+  Zoom,
+  InputAdornment
 } from '@mui/material';
 import { 
   Person, 
   Lock, 
   DarkMode,
-  LightMode
+  LightMode,
+  Visibility,
+  VisibilityOff
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
@@ -63,6 +66,7 @@ const Login = ({ mode, setMode }) => {
   const [loading, setLoading] = useState(false);
   const [particles, setParticles] = useState([]);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -166,6 +170,10 @@ const Login = ({ mode, setMode }) => {
     // Clear error messages when toggling theme
     setErrors({}); // This line is removed
     setMode(mode === 'light' ? 'dark' : 'light');
+  };
+
+  const handleTogglePassword = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -339,7 +347,7 @@ const Login = ({ mode, setMode }) => {
                 fullWidth
                 label="Password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
                 error={!!errors.password}
@@ -386,7 +394,19 @@ const Login = ({ mode, setMode }) => {
                   '& input:-webkit-autofill': {
                     WebkitBoxShadow: `0 0 0 1000px ${mode === 'dark' ? '#1E1B4B' : 'rgba(255, 255, 255, 0.95)'} inset`,
                     WebkitTextFillColor: mode === 'dark' ? 'white' : 'black',
-                  }
+                  },
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleTogglePassword}
+                        onMouseDown={(event) => event.preventDefault()}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
                 }}
                 InputProps={{
                   startAdornment: <Lock sx={{ 

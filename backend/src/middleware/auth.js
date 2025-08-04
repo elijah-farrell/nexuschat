@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/database');
+const { execute } = require('../config/database');
 
 // Middleware to verify JWT token
 const auth = async (req, res, next) => {
@@ -14,7 +14,7 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database to ensure they still exist
-    const [users] = await query(
+    const [users] = await execute(
       'SELECT id, username, name, email, bio, profile_picture, status FROM users WHERE id = ?',
       [decoded.userId]
     );

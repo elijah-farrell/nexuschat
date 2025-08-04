@@ -160,11 +160,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      if (!backendUrl) {
-        return { success: false, error: 'Backend URL not configured' };
-      }
-      const response = await fetch(`${backendUrl}/api/auth/login`, {
+              const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+        const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

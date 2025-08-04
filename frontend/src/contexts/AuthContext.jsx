@@ -57,22 +57,10 @@ export const AuthProvider = ({ children }) => {
   // Enhanced loading state that includes socket connection
   const isFullyReady = isReady && (!user || (user && (isConnected || isConnectingState === false)));
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[AUTH DEBUG] Loading state:', {
-      isReady,
-      user: !!user,
-      isConnected,
-      isConnectingState,
-      isFullyReady
-    });
-  }, [isReady, user, isConnected, isConnectingState, isFullyReady]);
-
   // Fallback: if socket connection takes too long, allow app to load anyway
   useEffect(() => {
     if (user && isReady && !isConnected && !isConnectingState) {
       const timeout = setTimeout(() => {
-        console.log('[AUTH DEBUG] Socket connection timeout, allowing app to load anyway');
         // Force the app to load even without socket connection
       }, 15000); // 15 seconds timeout
       
@@ -84,7 +72,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!isReady) {
       const timeout = setTimeout(() => {
-        console.log('[AUTH DEBUG] Auth initialization timeout, forcing ready state');
         setLoading(false);
         setIsReady(true);
       }, 10000); // 10 seconds timeout
@@ -204,7 +191,6 @@ export const AuthProvider = ({ children }) => {
       if (!backendUrl) {
         return { success: false, error: 'VITE_BACKEND_URL environment variable is not set' };
       }
-      console.log('[AUTH DEBUG] Login attempt:', { username, backendUrl });
       
       const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
@@ -214,17 +200,12 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password }),
       });
 
-      console.log('[AUTH DEBUG] Login response status:', response.status);
-      console.log('[AUTH DEBUG] Login response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('[AUTH DEBUG] Login error response:', errorData);
         return { success: false, error: errorData.error || 'Login failed' };
       }
 
       const data = await response.json();
-      console.log('[AUTH DEBUG] Login success data:', data);
       
       setToken(data.token);
       setUser(data.user);
@@ -232,7 +213,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(data.user));
       return { success: true };
     } catch (error) {
-      console.error('[AUTH DEBUG] Login error:', error);
       return { success: false, error: 'Network error. Please check your connection.' };
     }
   };
@@ -243,7 +223,6 @@ export const AuthProvider = ({ children }) => {
       if (!backendUrl) {
         return { success: false, error: 'VITE_BACKEND_URL environment variable is not set' };
       }
-      console.log('[AUTH DEBUG] Register attempt:', { username, name, backendUrl });
       
       const response = await fetch(`${backendUrl}/api/auth/register`, {
         method: 'POST',
@@ -253,17 +232,12 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password, name }),
       });
 
-      console.log('[AUTH DEBUG] Register response status:', response.status);
-      console.log('[AUTH DEBUG] Register response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('[AUTH DEBUG] Register error response:', errorData);
         return { success: false, error: errorData.error || 'Registration failed' };
       }
 
       const data = await response.json();
-      console.log('[AUTH DEBUG] Register success data:', data);
       
       setToken(data.token);
       setUser(data.user);
@@ -271,7 +245,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(data.user));
       return { success: true };
     } catch (error) {
-      console.error('[AUTH DEBUG] Register error:', error);
       return { success: false, error: 'Network error. Please check your connection.' };
     }
   };

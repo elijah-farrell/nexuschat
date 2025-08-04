@@ -80,14 +80,6 @@ export const SocketProvider = ({ children }) => {
                            socketInstance.auth?.token !== token ||
                            !user;
     
-    console.log('[SOCKET DEBUG] Connection check:', {
-      hasSocket: !!socketInstance,
-      isConnected: socketInstance?.connected,
-      hasToken: !!token,
-      hasUser: !!user,
-      shouldReconnect
-    });
-    
     if (shouldReconnect && token && user && connectionAttemptsRef.current < maxRetries) {
       // Clear any pending reconnect timeout
       if (reconnectTimeoutRef.current) {
@@ -131,13 +123,8 @@ export const SocketProvider = ({ children }) => {
             forceNew: true,
           });
 
-          console.log('[SOCKET DEBUG] Attempting connection to:', backendUrl);
-          console.log('[SOCKET DEBUG] Token available:', !!token);
-          console.log('[SOCKET DEBUG] User available:', !!user);
-
           connectionPromise = new Promise((resolve) => {
             newSocket.on('connect', () => {
-              console.log('[SOCKET DEBUG] Connected successfully');
               socketInstance = newSocket;
               setSocket(newSocket);
               setIsConnected(true);
@@ -147,7 +134,6 @@ export const SocketProvider = ({ children }) => {
               resolve(newSocket);
             });
             newSocket.on('disconnect', (reason) => {
-              console.log('[SOCKET DEBUG] Disconnected:', reason);
               setIsConnected(false);
               setIsConnectingState(false);
               isConnecting = false;
@@ -158,7 +144,6 @@ export const SocketProvider = ({ children }) => {
               resolve(null);
             });
             newSocket.on('connect_error', (error) => {
-              console.error('[SOCKET DEBUG] Connection error:', error);
               setIsConnected(false);
               setIsConnectingState(false);
               isConnecting = false;
@@ -189,7 +174,6 @@ export const SocketProvider = ({ children }) => {
             setIsConnectingState(false);
             isConnecting = false;
             connectionPromise = null;
-            hasLoggedConnection = false;
             socketInstance = null;
           };
         }, 100); // 100ms debounce

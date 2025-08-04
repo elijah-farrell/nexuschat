@@ -263,8 +263,8 @@ pool.query('SELECT 1')
     server.listen(PORT, () => {
       console.log(`\n✅ NexusChat server running!`);
       console.log(`   🚀 Port: ${PORT}`);
-      console.log(`   🌐 API: http://localhost:${PORT}/api`);
-      console.log(`   🩺 Health: http://localhost:${PORT}/api/health`);
+      console.log(`   🌐 API: Ready`);
+      console.log(`   🩺 Health: Ready`);
       console.log(`   🔌 WebSocket: Ready`);
       console.log(`   🗄️ Database: Connected\n`);
     });

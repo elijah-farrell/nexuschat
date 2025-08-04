@@ -177,7 +177,7 @@ const ChatArea = React.memo(({
         } else {
           // Fallback: fetch creator by API if not in members
           try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/auth/profile/${dmInfo.created_by}`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/profile/${dmInfo.created_by}`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ const ChatArea = React.memo(({
   const markDMAsRead = useCallback(async () => {
     if (!dmId) return;
     try {
-      await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/messaging/mark-read/${dmId}`, {
+              await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/mark-read/${dmId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -249,7 +249,7 @@ const ChatArea = React.memo(({
     if (!token || !selectedDirectMessage) return;
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/messaging/users/${selectedDirectMessage}/dm`, {
+              const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/users/${selectedDirectMessage}/dm`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ const ChatArea = React.memo(({
       const id = overrideDmId || dmId;
       if (!id) return;
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/messaging/dms/${id}`, {
+              const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -297,10 +297,10 @@ const ChatArea = React.memo(({
     try {
       let url;
       if (selectedChannel) {
-        url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/messaging/channels/${selectedChannel.id}/messages`;
+        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/channels/${selectedChannel.id}/messages`;
       } else if (dmId || overrideDmId) {
         const id = overrideDmId || dmId;
-        url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/messaging/dms/${id}/messages`;
+        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}/messages`;
       } else {
         return;
       }
@@ -331,10 +331,10 @@ const ChatArea = React.memo(({
       let url;
       let body;
       if (selectedChannel) {
-        url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/messaging/channels/${selectedChannel.id}/messages`;
+        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/channels/${selectedChannel.id}/messages`;
         body = { content: messageText };
       } else if (dmId) {
-        url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/api/messaging/dms/${dmId}/messages`;
+        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${dmId}/messages`;
         body = { content: messageText };
       } else {
         return;

@@ -160,7 +160,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-              const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+              const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    if (!backendUrl) {
+      throw new Error('VITE_BACKEND_URL environment variable is not set');
+    }
         const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {

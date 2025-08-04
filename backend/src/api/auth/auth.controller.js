@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { query, execute } = require('../../config/database');
+const { query, queryOne } = require('../../config/database');
 const { sanitizeUsername, sanitizePassword, sanitizeString } = require('../../utils/sanitize');
 
 // Track failed login attempts
@@ -74,12 +74,12 @@ const register = async (req, res) => {
     }
 
     // Check if username already exists (case-insensitive)
-    const [existingUser] = await query(
+    const existingUser = queryOne(
       'SELECT id FROM users WHERE LOWER(username) = ?',
       [sanitizedUsername.toLowerCase()]
     );
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
@@ -87,14 +87,14 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(sanitizedPassword, 10);
 
     // Create user (do not set name on registration)
-    const [result] = await query(
+    const result = query(
       'INSERT INTO users (username, password) VALUES (?, ?)',
       [sanitizedUsername, hashedPassword]
     );
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: result.insertId, username: sanitizedUsername },
+      { userId: result.lastInsertRowid, username: sanitizedUsername },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -104,7 +104,7 @@ const register = async (req, res) => {
       message: 'User registered successfully',
       token,
       user: {
-        id: result.insertId,
+        id: result.lastInsertRowid,
         username: sanitizedUsername,
         email: null,
         bio: null,
@@ -143,17 +143,15 @@ const login = async (req, res) => {
     }
 
     // Find user
-    const [users] = await query(
+    const user = queryOne(
       'SELECT * FROM users WHERE username = ?',
       [sanitizedUsername]
     );
 
-    if (users.length === 0) {
+    if (!user) {
       recordFailedAttempt(sanitizedUsername);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-
-    const user = users[0];
 
     // Check password
     const isValidPassword = await bcrypt.compare(sanitizedPassword, user.password);
@@ -166,8 +164,8 @@ const login = async (req, res) => {
     clearFailedAttempts(sanitizedUsername);
 
     // Update user status to online
-    await query(
-      'UPDATE users SET status = ?, last_seen = NOW() WHERE id = ?',
+    query(
+      'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
       ['online', user.id]
     );
 
@@ -203,18 +201,18 @@ const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [users] = await query(
+    const user = queryOne(
       'SELECT id, username, name, email, bio, profile_picture, banner_color, status, last_seen, created_at FROM users WHERE id = ?',
       [userId]
     );
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     res.json({
       success: true,
-      user: users[0]
+      user: user
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -423,11 +421,11 @@ const checkUsername = async (req, res) => {
   if (!username) {
     return res.status(400).json({ error: 'Username is required' });
   }
-  const [existingUser] = await query(
+  const existingUser = queryOne(
     'SELECT id FROM users WHERE LOWER(username) = ?',
     [username.toLowerCase()]
   );
-  if (existingUser.length > 0) {
+  if (existingUser) {
     return res.json({ available: false });
   }
   res.json({ available: true });
@@ -454,17 +452,17 @@ const updateUsername = async (req, res) => {
     }
 
     // Check if username already exists (case-insensitive, but allow same user to keep their username)
-    const [existingUser] = await query(
+    const existingUser = queryOne(
       'SELECT id FROM users WHERE LOWER(username) = ? AND id != ?',
       [username.toLowerCase(), userId]
     );
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
     // Update username
-    await query(
+    query(
       'UPDATE users SET username = ? WHERE id = ?',
       [username, userId]
     );
@@ -492,16 +490,16 @@ const deleteAccount = async (req, res) => {
     }
 
     // Get current user's username
-    const [users] = await query(
+    const user = queryOne(
       'SELECT username FROM users WHERE id = ?',
       [userId]
     );
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const currentUsername = users[0].username;
+    const currentUsername = user.username;
 
     // Check if provided username matches exactly (case-sensitive)
     if (username !== currentUsername) {
@@ -509,7 +507,7 @@ const deleteAccount = async (req, res) => {
     }
 
     // Delete user (cascade will handle related data)
-    await query('DELETE FROM users WHERE id = ?', [userId]);
+    query('DELETE FROM users WHERE id = ?', [userId]);
 
     res.json({
       success: true,

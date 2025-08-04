@@ -267,7 +267,7 @@ const Register = ({ mode, setMode }) => {
       if (result.success) {
         navigate('/');
       } else {
-        setError(result.message || 'Registration failed. Username might be in use.');
+        setError(result.error || 'Registration failed. Username might be in use.');
       }
     } catch (error) {
       setError('An unexpected error occurred during registration.');

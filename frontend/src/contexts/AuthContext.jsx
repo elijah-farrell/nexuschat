@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       if (!backendUrl) {
-        throw new Error('VITE_BACKEND_URL environment variable is not set');
+        return { success: false, error: 'VITE_BACKEND_URL environment variable is not set' };
       }
       console.log('[AUTH DEBUG] Login attempt:', { username, backendUrl });
       
@@ -184,7 +184,7 @@ export const AuthProvider = ({ children }) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.log('[AUTH DEBUG] Login error response:', errorData);
-        throw new Error(errorData.error || 'Login failed');
+        return { success: false, error: errorData.error || 'Login failed' };
       }
 
       const data = await response.json();
@@ -193,9 +193,10 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
+      return { success: true };
     } catch (error) {
       console.error('[AUTH DEBUG] Login error:', error);
-      throw error;
+      return { success: false, error: 'Network error. Please check your connection.' };
     }
   };
 
@@ -203,7 +204,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       if (!backendUrl) {
-        throw new Error('VITE_BACKEND_URL environment variable is not set');
+        return { success: false, error: 'VITE_BACKEND_URL environment variable is not set' };
       }
       console.log('[AUTH DEBUG] Register attempt:', { username, name, backendUrl });
       
@@ -221,7 +222,7 @@ export const AuthProvider = ({ children }) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.log('[AUTH DEBUG] Register error response:', errorData);
-        throw new Error(errorData.error || 'Registration failed');
+        return { success: false, error: errorData.error || 'Registration failed' };
       }
 
       const data = await response.json();
@@ -230,9 +231,10 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
+      return { success: true };
     } catch (error) {
       console.error('[AUTH DEBUG] Register error:', error);
-      throw error;
+      return { success: false, error: 'Network error. Please check your connection.' };
     }
   };
 

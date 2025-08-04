@@ -324,7 +324,7 @@ const updateStatus = async (req, res) => {
 
     // Update user status and last_seen
     await query(
-      'UPDATE users SET status = ?, last_seen = NOW() WHERE id = ?',
+      'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
       [status, userId]
     );
 
@@ -355,7 +355,7 @@ const logout = async (req, res) => {
     if (!hasOtherSessions) {
       // Only update status to offline if no other sessions exist
       await query(
-        'UPDATE users SET status = ?, last_seen = NOW() WHERE id = ?',
+        'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
         ['offline', userId]
       );
 

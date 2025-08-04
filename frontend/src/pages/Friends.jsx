@@ -1065,7 +1065,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
               </Box>
             ) : (
               <List sx={{ p: 0 }}>
-                {searchResults.map(renderSearchResult)}
+                {(Array.isArray(searchResults) ? searchResults : []).map(renderSearchResult)}
               </List>
             )}
           </Paper>
@@ -1272,9 +1272,74 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                     </Typography>
                   </Box>
                   <List>
-                    {(friendsSearchQuery ? filteredFriends : friends).map((friend, idx) => (
+                    {(Array.isArray(friendsSearchQuery ? filteredFriends : friends) ? (friendsSearchQuery ? filteredFriends : friends) : []).map((friend, idx) => (
                       <Grow in={true} timeout={500 + idx * 80} key={friend.id}>
-                        <div>{renderFriendItem(friend)}</div>
+                        <ListItem
+                          key={friend.id}
+                          sx={{
+                            borderBottom: idx < (friendsSearchQuery ? filteredFriends : friends).length - 1 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                            '&:last-child': { borderBottom: 'none' }
+                          }}
+                        >
+                          <ListItemAvatar>
+                            <Avatar
+                              src={friend.profile_picture}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                border: `2px solid ${getStatusColor(getLiveStatus(friend))}`,
+                              }}
+                            >
+                              {friend.username.charAt(0).toUpperCase()}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                  {getDisplayName(friend) || friend.username}
+                                </Typography>
+                                {getDisplayName(friend) && (
+                                  <Typography variant="body2" color="text.secondary">
+                                    @{friend.username}
+                                  </Typography>
+                                )}
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                <Box
+                                  sx={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    bgcolor: getStatusColor(getLiveStatus(friend)),
+                                    mr: 1
+                                  }}
+                                />
+                                <Typography variant="body2" color="text.secondary">
+                                  {getStatusText(getLiveStatus(friend))}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <IconButton
+                              onClick={() => handleStartDM(friend.id)}
+                              size="small"
+                              sx={{ color: 'text.secondary' }}
+                            >
+                              <MessageIcon />
+                            </IconButton>
+                            <IconButton
+                              onClick={(event) => handleFriendMenuOpen(event, friend)}
+                              size="small"
+                              sx={{ color: 'text.secondary' }}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </Box>
+                        </ListItem>
                       </Grow>
                     ))}
                   </List>
@@ -1305,7 +1370,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                 </Box>
               ) : (
                 <List>
-                  {(friendsSearchQuery ? filteredOnlineFriends : realTimeOnlineFriends).map(renderFriendItem)}
+                                      {(Array.isArray(friendsSearchQuery ? filteredOnlineFriends : realTimeOnlineFriends) ? (friendsSearchQuery ? filteredOnlineFriends : realTimeOnlineFriends) : []).map(renderFriendItem)}
                 </List>
               )}
             </Box>
@@ -1333,7 +1398,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                 </Box>
               ) : (
                 <List>
-                  {filteredFriendRequests.map(renderFriendRequest)}
+                                      {(Array.isArray(filteredFriendRequests) ? filteredFriendRequests : []).map(renderFriendRequest)}
                 </List>
               )}
             </Box>
@@ -1361,7 +1426,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                 </Box>
               ) : (
                 <List>
-                  {filteredSentRequests.map(renderSentRequest)}
+                                      {(Array.isArray(filteredSentRequests) ? filteredSentRequests : []).map(renderSentRequest)}
                 </List>
               )}
             </Box>

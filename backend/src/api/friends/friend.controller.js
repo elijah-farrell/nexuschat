@@ -7,7 +7,7 @@ const getFriends = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [friends] = await query(`
+    const friends = query(`
       SELECT u.id, u.username, u.name, u.profile_picture, u.status, u.last_seen, f.created_at as friendship_date
       FROM friends f
       INNER JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)
@@ -30,7 +30,7 @@ const getOnlineFriends = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [friends] = await query(`
+    const friends = query(`
       SELECT u.id, u.username, u.name, u.profile_picture, u.status, u.last_seen, f.created_at as friendship_date
       FROM friends f
       INNER JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)
@@ -55,7 +55,7 @@ const getFriendRequests = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [requests] = await query(`
+    const requests = query(`
       SELECT fr.id, fr.status, fr.created_at,
              u.id as sender_id, u.username, u.name, u.profile_picture
       FROM friend_requests fr
@@ -79,7 +79,7 @@ const getSentFriendRequests = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [requests] = await query(`
+    const requests = query(`
       SELECT fr.id, fr.status, fr.created_at,
              u.id as recipient_id, u.username, u.name, u.profile_picture
       FROM friend_requests fr
@@ -110,7 +110,7 @@ const sendFriendRequest = async (req, res) => {
       targetUserId = recipientId;
     } else if (recipientUsername) {
       // Check if recipient exists
-      const [recipients] = await query(
+      const recipients = query(
         'SELECT id FROM users WHERE username = ?',
         [recipientUsername]
       );
@@ -129,7 +129,7 @@ const sendFriendRequest = async (req, res) => {
     }
 
     // Check if they are already friends
-    const [existingFriends] = await query(`
+    const existingFriends = query(`
       SELECT id FROM friends 
       WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)
     `, [senderId, targetUserId, targetUserId, senderId]);
@@ -139,7 +139,7 @@ const sendFriendRequest = async (req, res) => {
     }
 
     // Check for existing requests
-    const [existingRequests] = await query(`
+    const existingRequests = query(`
       SELECT id, status FROM friend_requests 
       WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
     `, [senderId, targetUserId, targetUserId, senderId]);
@@ -150,7 +150,7 @@ const sendFriendRequest = async (req, res) => {
         return res.status(400).json({ error: 'Friend request already pending' });
       } else if (request.status === 'rejected') {
         // If previously rejected, update the existing request to pending and update created_at
-        await query(
+        query(
           'UPDATE friend_requests SET status = ?, updated_at = CURRENT_TIMESTAMP, created_at = NOW() WHERE id = ?',
           ['pending', request.id]
         );
@@ -175,7 +175,7 @@ const sendFriendRequest = async (req, res) => {
 
     // Create new friend request
     try {
-      const [result] = await query(
+      const result = query(
         'INSERT INTO friend_requests (sender_id, recipient_id) VALUES (?, ?)',
         [senderId, targetUserId]
       );
@@ -214,7 +214,7 @@ const acceptFriendRequest = async (req, res) => {
     const { requestId } = req.params;
 
     // Get the friend request
-    const [requests] = await query(`
+    const requests = query(`
       SELECT * FROM friend_requests 
       WHERE id = ? AND recipient_id = ? AND status = 'pending'
     `, [requestId, userId]);
@@ -226,13 +226,13 @@ const acceptFriendRequest = async (req, res) => {
     const request = requests[0];
 
     // Update request status to accepted
-    await query(
+    query(
       'UPDATE friend_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       ['accepted', requestId]
     );
 
     // Create friendship (add to friends table)
-    await query(
+    query(
       'INSERT INTO friends (user_id, friend_id) VALUES (?, ?)',
       [request.sender_id, request.recipient_id]
     );
@@ -262,7 +262,7 @@ const rejectFriendRequest = async (req, res) => {
     const { requestId } = req.params;
 
     // Update request status to rejected
-    const [result] = await query(`
+    const result = query(`
       UPDATE friend_requests 
       SET status = ?, updated_at = CURRENT_TIMESTAMP 
       WHERE id = ? AND recipient_id = ? AND status = 'pending'
@@ -274,7 +274,7 @@ const rejectFriendRequest = async (req, res) => {
 
     // Emit real-time event to sender (to all sockets)
     // Get sender_id for this request
-    const [request] = await query('SELECT sender_id FROM friend_requests WHERE id = ?', [requestId]);
+    const request = query('SELECT sender_id FROM friend_requests WHERE id = ?', [requestId]);
     if (request.length > 0 && req.io && req.userSockets && req.userSockets.has(request[0].sender_id)) {
       const userSocketSet = req.userSockets.get(request[0].sender_id);
       for (const socketId of userSocketSet) {
@@ -298,9 +298,9 @@ const cancelFriendRequest = async (req, res) => {
     const userId = req.user.id;
     const { requestId } = req.params;
     // Get recipient_id before deleting
-    const [request] = await query('SELECT recipient_id FROM friend_requests WHERE id = ?', [requestId]);
+    const request = query('SELECT recipient_id FROM friend_requests WHERE id = ?', [requestId]);
     // Delete the friend request (only if user is the sender)
-    const [result] = await query(`
+    const result = query(`
       DELETE FROM friend_requests 
       WHERE id = ? AND sender_id = ? AND status = 'pending'
     `, [requestId, userId]);
@@ -330,7 +330,7 @@ const removeFriend = async (req, res) => {
     const userId = req.user.id;
     const { friendId } = req.params;
     // Remove friendship from both sides
-    const [result] = await query(`
+    const result = query(`
       DELETE FROM friends 
       WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)
     `, [userId, friendId, friendId, userId]);
@@ -366,7 +366,7 @@ const searchUsers = async (req, res) => {
 
     const searchTerm = `%${searchQuery.trim()}%`;
 
-    const [users] = await query(`
+    const users = query(`
       SELECT u.id, u.username, u.name, u.profile_picture, u.status,
              CASE 
                WHEN f.id IS NOT NULL THEN 'friend'
@@ -399,7 +399,7 @@ const getFriendActivity = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Get friend requests received (who added you)
-    const [friendRequests] = await query(`
+    const friendRequests = query(`
       SELECT 
         fr.id,
         fr.status,
@@ -418,7 +418,7 @@ const getFriendActivity = async (req, res) => {
     `, [currentUserId]);
 
     // Get friends list with join dates
-    const [friends] = await query(`
+    const friends = query(`
       SELECT 
         f.id,
         f.created_at as friendship_date,
@@ -468,7 +468,7 @@ const getFriendActivity = async (req, res) => {
 const getFriendsOfUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const [friends] = await query(
+    const friends = query(
       `SELECT u.id, u.username, u.name, u.profile_picture, u.status, u.last_seen, f.created_at as friendship_date
        FROM friends f
        INNER JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)

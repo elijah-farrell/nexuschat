@@ -55,7 +55,19 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   // Enhanced loading state that includes socket connection
-  const isFullyReady = isReady && (!user || (user && isConnected && !isConnectingState));
+  const isFullyReady = isReady && (!user || (user && (isConnected || isConnectingState === false)));
+
+  // Fallback: if socket connection takes too long, allow app to load anyway
+  useEffect(() => {
+    if (user && isReady && !isConnected && !isConnectingState) {
+      const timeout = setTimeout(() => {
+        console.log('[AUTH DEBUG] Socket connection timeout, allowing app to load anyway');
+        // Force the app to load even without socket connection
+      }, 15000); // 15 seconds timeout
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [user, isReady, isConnected, isConnectingState]);
 
   // Periodically update user status (every 30 seconds)
   useEffect(() => {

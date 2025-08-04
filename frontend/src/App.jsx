@@ -11,11 +11,25 @@ import ProtectedRoute from './components/user/ProtectedRoute';
 import { SocketProvider } from './contexts/SocketContext';
 import { Box, CircularProgress, Typography, Fade } from '@mui/material';
 
-// Loading component that uses the enhanced AuthContext
+// AppLoading component defined directly in App.jsx
 const AppLoading = ({ children }) => {
   const { isFullyReady, user } = useAuth();
   const location = window.location.pathname;
   const isAuthPage = location === '/login' || location === '/register';
+  const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+
+  // Show timeout message after 10 seconds if still loading
+  useEffect(() => {
+    if (!isFullyReady && !isAuthPage) {
+      const timeout = setTimeout(() => {
+        setShowTimeoutMessage(true);
+      }, 10000); // 10 seconds
+
+      return () => clearTimeout(timeout);
+    } else {
+      setShowTimeoutMessage(false);
+    }
+  }, [isFullyReady, isAuthPage]);
 
   // Show loading screen if not fully ready and not on auth pages
   if (!isFullyReady && !isAuthPage) {
@@ -23,29 +37,12 @@ const AppLoading = ({ children }) => {
       <Fade in={true} timeout={500}>
         <Box
           sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            bgcolor: 'background.default',
-            zIndex: 9999,
-            gap: 3
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            alignItems: 'center', bgcolor: 'background.default', zIndex: 9999, gap: 3
           }}
         >
-          <CircularProgress 
-            size={60} 
-            sx={{ 
-              color: '#5865F2',
-              '& .MuiCircularProgress-circle': {
-                strokeLinecap: 'round',
-              }
-            }} 
-          />
+          <CircularProgress size={60} sx={{ color: '#5865F2', '& .MuiCircularProgress-circle': { strokeLinecap: 'round', } }} />
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontWeight: 600 }}>
               Connecting to NexusChat...
@@ -53,12 +50,16 @@ const AppLoading = ({ children }) => {
             <Typography variant="body2" color="text.secondary">
               Setting up real-time features
             </Typography>
+            {showTimeoutMessage && (
+              <Typography variant="body2" color="warning.main" sx={{ mt: 2 }}>
+                Taking longer than expected. You can still use the app without real-time features.
+              </Typography>
+            )}
           </Box>
         </Box>
       </Fade>
     );
   }
-
   return children;
 };
 

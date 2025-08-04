@@ -80,6 +80,14 @@ export const SocketProvider = ({ children }) => {
                            socketInstance.auth?.token !== token ||
                            !user;
     
+    console.log('[SOCKET DEBUG] Connection check:', {
+      hasSocket: !!socketInstance,
+      isConnected: socketInstance?.connected,
+      hasToken: !!token,
+      hasUser: !!user,
+      shouldReconnect
+    });
+    
     if (shouldReconnect && token && user && connectionAttemptsRef.current < maxRetries) {
       // Clear any pending reconnect timeout
       if (reconnectTimeoutRef.current) {

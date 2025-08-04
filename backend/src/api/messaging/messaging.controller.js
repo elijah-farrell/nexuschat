@@ -1,9 +1,9 @@
-const { query, execute } = require('../../config/database');
+const { query } = require('../../config/database');
 
 // ===== USER APIs =====
 
 // Get all users
-const getUsers = async (req, res) => {
+const getUsers = async (_req, res) => {
   try {
     const [users] = await query(
       'SELECT id, username, name, profile_picture, status, last_seen FROM users ORDER BY name ASC'

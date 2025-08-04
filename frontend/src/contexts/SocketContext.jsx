@@ -7,7 +7,6 @@ const SocketContext = createContext();
 let socketInstance = null;
 let isConnecting = false;
 let connectionPromise = null;
-let hasLoggedConnection = false; // Prevent duplicate connection logs
 
 export const useSocket = () => {
   const context = useContext(SocketContext);

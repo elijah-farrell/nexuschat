@@ -1,4 +1,4 @@
-const { query, execute } = require('../../config/database');
+const { query } = require('../../config/database');
 
 // ===== FRIEND APIs =====
 

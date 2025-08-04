@@ -38,7 +38,7 @@ app.use(helmet({
 }));
 
 // Additional security headers
-app.use((req, res, next) => {
+app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -150,7 +150,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', (reason) => {
+  socket.on('disconnect', (_reason) => {
     // Remove this specific socket from user's session set
     if (userSockets.has(socket.userId)) {
       const userSessionSet = userSockets.get(socket.userId);

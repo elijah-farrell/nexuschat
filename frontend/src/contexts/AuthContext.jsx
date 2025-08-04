@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [isReady, setIsReady] = useState(false);
+  const { isConnected, isConnectingState } = useSocket();
 
   useEffect(() => {
     setIsReady(false); // Reset ready state when token changes
@@ -52,6 +53,9 @@ export const AuthProvider = ({ children }) => {
 
     initializeAuth();
   }, [token]);
+
+  // Enhanced loading state that includes socket connection
+  const isFullyReady = isReady && (!user || (user && isConnected && !isConnectingState));
 
   // Periodically update user status (every 30 seconds)
   useEffect(() => {
@@ -262,6 +266,7 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     isReady,
+    isFullyReady,
     login,
     register,
     logout,

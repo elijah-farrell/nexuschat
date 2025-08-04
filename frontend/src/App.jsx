@@ -4,12 +4,63 @@ import { ThemeProvider, CssBaseline, createTheme } from '@mui/material';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ServerProvider } from './contexts/ServerContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/user/ProtectedRoute';
 import { SocketProvider } from './contexts/SocketContext';
-import SocketLoading from './components/ui/SocketLoading';
+import { Box, CircularProgress, Typography, Fade } from '@mui/material';
+
+// Loading component that uses the enhanced AuthContext
+const AppLoading = ({ children }) => {
+  const { isFullyReady, user } = useAuth();
+  const location = window.location.pathname;
+  const isAuthPage = location === '/login' || location === '/register';
+
+  // Show loading screen if not fully ready and not on auth pages
+  if (!isFullyReady && !isAuthPage) {
+    return (
+      <Fade in={true} timeout={500}>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            bgcolor: 'background.default',
+            zIndex: 9999,
+            gap: 3
+          }}
+        >
+          <CircularProgress 
+            size={60} 
+            sx={{ 
+              color: '#5865F2',
+              '& .MuiCircularProgress-circle': {
+                strokeLinecap: 'round',
+              }
+            }} 
+          />
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontWeight: 600 }}>
+              Connecting to NexusChat...
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Setting up real-time features
+            </Typography>
+          </Box>
+        </Box>
+      </Fade>
+    );
+  }
+
+  return children;
+};
 
 const App = () => {
   const [mode, setMode] = useState(() => {
@@ -87,7 +138,7 @@ const App = () => {
           <ServerProvider>
             <NotificationProvider>
               <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <SocketLoading>
+                <AppLoading>
                   <Routes>
                     <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
                     <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
@@ -101,7 +152,7 @@ const App = () => {
                     />
                     <Route path="*" element={<Navigate to="/" />} />
                   </Routes>
-                </SocketLoading>
+                </AppLoading>
               </Router>
             </NotificationProvider>
           </ServerProvider>

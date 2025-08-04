@@ -97,99 +97,102 @@ export const SocketProvider = ({ children }) => {
       
       // Debounce reconnection to prevent rapid reconnects
       reconnectTimeoutRef.current = setTimeout(() => {
-        // Disconnect existing socket only if we need to reconnect
-        if (socketInstance && socketInstance.connected) {
-          try {
-            socketInstance.disconnect();
-          } catch {}
-          // Don't set to null immediately, let the disconnect event handle it
-        }
-        if (isConnecting && connectionPromise) {
-          connectionPromise.then((connectedSocket) => {
-            if (connectedSocket) {
-              setSocket(connectedSocket);
+        // Add small delay to ensure user state is properly set
+        setTimeout(() => {
+          // Disconnect existing socket only if we need to reconnect
+          if (socketInstance && socketInstance.connected) {
+            try {
+              socketInstance.disconnect();
+            } catch {}
+            // Don't set to null immediately, let the disconnect event handle it
+          }
+          if (isConnecting && connectionPromise) {
+            connectionPromise.then((connectedSocket) => {
+              if (connectedSocket) {
+                setSocket(connectedSocket);
+                setIsConnected(true);
+                setIsConnectingState(false);
+              }
+            });
+            return;
+          }
+          isConnecting = true;
+          setIsConnectingState(true);
+          const backendUrl = import.meta.env.VITE_BACKEND_URL;
+          if (!backendUrl) {
+            console.error('❌ VITE_BACKEND_URL environment variable is not set');
+            return;
+          }
+          const newSocket = io(backendUrl, {
+            auth: { token },
+            transports: ['websocket', 'polling'],
+            timeout: 10000,
+            reconnection: false,
+            forceNew: true,
+          });
+
+          console.log('[SOCKET DEBUG] Attempting connection to:', backendUrl);
+          console.log('[SOCKET DEBUG] Token available:', !!token);
+          console.log('[SOCKET DEBUG] User available:', !!user);
+
+          connectionPromise = new Promise((resolve) => {
+            newSocket.on('connect', () => {
+              console.log('[SOCKET DEBUG] Connected successfully');
+              socketInstance = newSocket;
+              setSocket(newSocket);
               setIsConnected(true);
               setIsConnectingState(false);
-            }
-          });
-          return;
-        }
-        isConnecting = true;
-        setIsConnectingState(true);
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        if (!backendUrl) {
-          console.error('❌ VITE_BACKEND_URL environment variable is not set');
-          return;
-        }
-        const newSocket = io(backendUrl, {
-          auth: { token },
-          transports: ['websocket', 'polling'],
-          timeout: 10000,
-          reconnection: false,
-          forceNew: true,
-        });
-
-        console.log('[SOCKET DEBUG] Attempting connection to:', backendUrl);
-        console.log('[SOCKET DEBUG] Token available:', !!token);
-        console.log('[SOCKET DEBUG] User available:', !!user);
-
-        connectionPromise = new Promise((resolve) => {
-          newSocket.on('connect', () => {
-            console.log('[SOCKET DEBUG] Connected successfully');
-            socketInstance = newSocket;
-            setSocket(newSocket);
-            setIsConnected(true);
-            setIsConnectingState(false);
-            isConnecting = false;
-            connectionAttemptsRef.current = 0;
-            resolve(newSocket);
-          });
-          newSocket.on('disconnect', (reason) => {
-            console.log('[SOCKET DEBUG] Disconnected:', reason);
-            setIsConnected(false);
-            setIsConnectingState(false);
-            isConnecting = false;
-            // Only clear socketInstance if this is the current instance
-            if (socketInstance === newSocket) {
+              isConnecting = false;
+              connectionAttemptsRef.current = 0;
+              resolve(newSocket);
+            });
+            newSocket.on('disconnect', (reason) => {
+              console.log('[SOCKET DEBUG] Disconnected:', reason);
+              setIsConnected(false);
+              setIsConnectingState(false);
+              isConnecting = false;
+              // Only clear socketInstance if this is the current instance
+              if (socketInstance === newSocket) {
+                socketInstance = null;
+              }
+              resolve(null);
+            });
+            newSocket.on('connect_error', (error) => {
+              console.error('[SOCKET DEBUG] Connection error:', error);
+              setIsConnected(false);
+              setIsConnectingState(false);
+              isConnecting = false;
               socketInstance = null;
-            }
-            resolve(null);
+              connectionAttemptsRef.current += 1;
+              if (connectionAttemptsRef.current >= maxRetries) {
+                console.warn('[SOCKET DEBUG] Max connection attempts reached. WebSocket features disabled.');
+              }
+              resolve(null);
+            });
           });
-          newSocket.on('connect_error', (error) => {
-            console.error('[SOCKET DEBUG] Connection error:', error);
-            setIsConnected(false);
+          newSocket.on('user_status_update', (data) => {
+            setUserStatuses(prev => new Map(prev.set(data.userId, data.status)));
+          });
+          newSocket.on('user_online', (data) => {
+            setUserStatuses(prev => new Map(prev.set(data.userId, 'online')));
+          });
+          newSocket.on('user_offline', (data) => {
+            setUserStatuses(prev => new Map(prev.set(data.userId, 'offline')));
+          });
+          setSocket(newSocket);
+          return () => {
+            if (newSocket) {
+              try {
+                newSocket.disconnect();
+              } catch {}
+            }
             setIsConnectingState(false);
             isConnecting = false;
+            connectionPromise = null;
+            hasLoggedConnection = false;
             socketInstance = null;
-            connectionAttemptsRef.current += 1;
-            if (connectionAttemptsRef.current >= maxRetries) {
-              console.warn('[SOCKET DEBUG] Max connection attempts reached. WebSocket features disabled.');
-            }
-            resolve(null);
-          });
-        });
-        newSocket.on('user_status_update', (data) => {
-          setUserStatuses(prev => new Map(prev.set(data.userId, data.status)));
-        });
-        newSocket.on('user_online', (data) => {
-          setUserStatuses(prev => new Map(prev.set(data.userId, 'online')));
-        });
-        newSocket.on('user_offline', (data) => {
-          setUserStatuses(prev => new Map(prev.set(data.userId, 'offline')));
-        });
-        setSocket(newSocket);
-        return () => {
-          if (newSocket) {
-            try {
-              newSocket.disconnect();
-            } catch {}
-          }
-          setIsConnectingState(false);
-          isConnecting = false;
-          connectionPromise = null;
-          hasLoggedConnection = false;
-          socketInstance = null;
-        };
+          };
+        }, 100); // 100ms debounce
       }, 100); // 100ms debounce
     } else if (!token || !user) {
       if (socket && socket.connected) {

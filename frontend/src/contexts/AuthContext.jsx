@@ -205,6 +205,7 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       return { success: true };
     } catch (error) {
       console.error('[AUTH DEBUG] Login error:', error);

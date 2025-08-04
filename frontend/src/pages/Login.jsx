@@ -352,36 +352,27 @@ const Login = ({ mode, setMode }) => {
                 onChange={handleChange}
                 error={!!errors.password}
                 helperText={errors.password}
-                sx={{ 
-                  mb: 3,
+                sx={{
                   '& .MuiInputLabel-root': {
                     color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
                     '&.Mui-focused': {
-                      color: '#6366F1'
+                      color: '#6366F2'
                     }
                   },
                   '& .MuiOutlinedInput-root': {
-                    backgroundColor: mode === 'dark' ? '#1E1B4B' : 'rgba(255, 255, 255, 0.95)',
-                    transition: 'none !important',
+                    backgroundColor: mode === 'dark' ? 'rgba(30, 27, 75, 0.9)' : 'rgba(255, 255, 255, 0.95)',
                     '& fieldset': {
                       borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
-                      transition: 'none !important',
                     },
                     '&:hover fieldset': {
                       borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
-                      transition: 'none !important',
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6366F1',
-                      transition: 'none !important',
+                      borderColor: '#6366F2',
                     },
                     '& input': {
                       color: mode === 'dark' ? 'white' : 'black',
                       backgroundColor: 'transparent',
-                      border: 'none',
-                      outline: 'none',
-                      borderRadius: '0',
-                      transition: 'none !important',
                     }
                   },
                   '& .MuiFormHelperText-root': {
@@ -390,7 +381,6 @@ const Login = ({ mode, setMode }) => {
                       color: '#f44336'
                     }
                   },
-                  // Simple autofill override
                   '& input:-webkit-autofill': {
                     WebkitBoxShadow: `0 0 0 1000px ${mode === 'dark' ? '#1E1B4B' : 'rgba(255, 255, 255, 0.95)'} inset`,
                     WebkitTextFillColor: mode === 'dark' ? 'white' : 'black',

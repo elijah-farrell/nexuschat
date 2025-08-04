@@ -384,7 +384,15 @@ const Login = ({ mode, setMode }) => {
                   '& input:-webkit-autofill': {
                     WebkitBoxShadow: `0 0 0 1000px ${mode === 'dark' ? '#1E1B4B' : 'rgba(255, 255, 255, 0.95)'} inset`,
                     WebkitTextFillColor: mode === 'dark' ? 'white' : 'black',
-                  },
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Lock sx={{ 
+                      mr: 1, 
+                      color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)' 
+                    }} />
+                  ),
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
@@ -397,12 +405,6 @@ const Login = ({ mode, setMode }) => {
                       </IconButton>
                     </InputAdornment>
                   )
-                }}
-                InputProps={{
-                  startAdornment: <Lock sx={{ 
-                    mr: 1, 
-                    color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)' 
-                  }} />
                 }}
               />
 

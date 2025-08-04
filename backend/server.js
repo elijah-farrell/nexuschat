@@ -11,6 +11,7 @@ const validateEnv = require('./src/config/validateEnv');
 const socketAuth = require('./src/middleware/socketAuth');
 const { pool, query } = require('./src/config/database');
 const auth = require('./src/middleware/auth'); // <-- moved up here
+const logger = require('./src/utils/logger'); // Added for detailed logging
 
 // Validate environment variables before starting
 validateEnv();
@@ -54,6 +55,18 @@ app.use(cors({
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
+
+// Add detailed request logging middleware
+app.use((req, res, next) => {
+  logger.info(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'} - User-Agent: ${req.headers['user-agent'] || 'none'}`);
+  next();
+});
+
+// Add CORS debugging
+app.use((req, res, next) => {
+  logger.info(`[CORS DEBUG] Request from: ${req.headers.origin || 'no origin'} to ${req.path}`);
+  next();
+});
 
 // Rate limiting for security
 const authLimiter = rateLimit({

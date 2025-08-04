@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { query, queryOne } = require('../../config/database');
 const { sanitizeUsername, sanitizePassword, sanitizeString } = require('../../utils/sanitize');
+const logger = require('../../utils/logger'); // Add logger
 
 // Track failed login attempts
 const failedAttempts = new Map(); // username -> { count: number, lockedUntil: timestamp }
@@ -44,10 +45,13 @@ const clearFailedAttempts = (username) => {
 // Register new user
 const register = async (req, res) => {
   try {
+    logger.info(`[REGISTER] Attempt from IP: ${req.ip} - Body: ${JSON.stringify(req.body)}`);
+    
     const { username, password, name } = req.body;
 
     // Validate input
     if (!username || !password) {
+      logger.warn(`[REGISTER] Missing fields - Username: ${!!username}, Password: ${!!password}`);
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
@@ -56,33 +60,42 @@ const register = async (req, res) => {
     const sanitizedPassword = sanitizePassword(password);
     const sanitizedName = name ? sanitizeString(name) : null;
 
+    logger.info(`[REGISTER] Sanitized username: ${sanitizedUsername}`);
+
     // Username validation
     if (sanitizedUsername.length < 3 || sanitizedUsername.length > 20) {
+      logger.warn(`[REGISTER] Username length invalid: ${sanitizedUsername.length}`);
       return res.status(400).json({ error: 'Username must be between 3 and 20 characters' });
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(sanitizedUsername)) {
+      logger.warn(`[REGISTER] Username contains invalid characters: ${sanitizedUsername}`);
       return res.status(400).json({ error: 'Username can only contain letters, numbers, and underscores' });
     }
 
     if (password.length < 6) {
+      logger.warn(`[REGISTER] Password too short: ${password.length}`);
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
     if (sanitizedPassword.length > 128) {
+      logger.warn(`[REGISTER] Password too long: ${sanitizedPassword.length}`);
       return res.status(400).json({ error: 'Password is too long' });
     }
 
     // Check if username already exists (case-insensitive)
+    logger.info(`[REGISTER] Checking if username exists: ${sanitizedUsername}`);
     const existingUser = queryOne(
       'SELECT id FROM users WHERE LOWER(username) = ?',
       [sanitizedUsername.toLowerCase()]
     );
 
     if (existingUser) {
+      logger.warn(`[REGISTER] Username already exists: ${sanitizedUsername}`);
       return res.status(400).json({ error: 'Username already exists' });
     }
 
+    logger.info(`[REGISTER] Creating new user: ${sanitizedUsername}`);
     // Hash password
     const hashedPassword = await bcrypt.hash(sanitizedPassword, 10);
 
@@ -92,6 +105,8 @@ const register = async (req, res) => {
       [sanitizedUsername, hashedPassword]
     );
 
+    logger.info(`[REGISTER] User created successfully with ID: ${result.lastInsertRowid}`);
+
     // Generate JWT token
     const token = jwt.sign(
       { userId: result.lastInsertRowid, username: sanitizedUsername },
@@ -99,6 +114,7 @@ const register = async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    logger.info(`[REGISTER] Registration successful for user: ${sanitizedUsername}`);
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -113,7 +129,7 @@ const register = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error(`[REGISTER] Error: ${error.message}`, error);
     res.status(500).json({ error: 'Registration failed' });
   }
 };
@@ -121,10 +137,13 @@ const register = async (req, res) => {
 // Login user
 const login = async (req, res) => {
   try {
+    logger.info(`[LOGIN] Attempt from IP: ${req.ip} - Username: ${req.body.username || 'none'}`);
+    
     const { username, password } = req.body;
 
     // Validate input
     if (!username || !password) {
+      logger.warn(`[LOGIN] Missing fields - Username: ${!!username}, Password: ${!!password}`);
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
@@ -132,34 +151,43 @@ const login = async (req, res) => {
     const sanitizedUsername = sanitizeUsername(username);
     const sanitizedPassword = sanitizePassword(password);
 
+    logger.info(`[LOGIN] Sanitized username: ${sanitizedUsername}`);
+
     // Basic input validation
     if (sanitizedUsername.length > 50 || sanitizedPassword.length > 128) {
+      logger.warn(`[LOGIN] Input too long - Username: ${sanitizedUsername.length}, Password: ${sanitizedPassword.length}`);
       return res.status(400).json({ error: 'Invalid input length' });
     }
 
     // Check if account is locked
     if (isAccountLocked(sanitizedUsername)) {
+      logger.warn(`[LOGIN] Account locked for: ${sanitizedUsername}`);
       return res.status(429).json({ error: 'Account temporarily locked. Please try again later.' });
     }
 
     // Find user
+    logger.info(`[LOGIN] Looking up user: ${sanitizedUsername}`);
     const user = queryOne(
       'SELECT * FROM users WHERE username = ?',
       [sanitizedUsername]
     );
 
     if (!user) {
+      logger.warn(`[LOGIN] User not found: ${sanitizedUsername}`);
       recordFailedAttempt(sanitizedUsername);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    logger.info(`[LOGIN] User found, checking password for: ${sanitizedUsername}`);
     // Check password
     const isValidPassword = await bcrypt.compare(sanitizedPassword, user.password);
     if (!isValidPassword) {
+      logger.warn(`[LOGIN] Invalid password for: ${sanitizedUsername}`);
       recordFailedAttempt(sanitizedUsername);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    logger.info(`[LOGIN] Password valid for: ${sanitizedUsername}`);
     // Clear failed attempts on successful login
     clearFailedAttempts(sanitizedUsername);
 
@@ -176,6 +204,7 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    logger.info(`[LOGIN] Login successful for: ${sanitizedUsername}`);
     res.json({
       success: true,
       message: 'Login successful',
@@ -191,7 +220,7 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error(`[LOGIN] Error: ${error.message}`, error);
     res.status(500).json({ error: 'Login failed' });
   }
 };

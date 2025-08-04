@@ -164,11 +164,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-              const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    if (!backendUrl) {
-      throw new Error('VITE_BACKEND_URL environment variable is not set');
-    }
-        const response = await fetch(`${backendUrl}/api/auth/login`, {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      if (!backendUrl) {
+        throw new Error('VITE_BACKEND_URL environment variable is not set');
+      }
+      console.log('[AUTH DEBUG] Login attempt:', { username, backendUrl });
+      
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -176,61 +178,61 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password }),
       });
 
+      console.log('[AUTH DEBUG] Login response status:', response.status);
+      console.log('[AUTH DEBUG] Login response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('[AUTH DEBUG] Login error response:', errorData);
+        throw new Error(errorData.error || 'Login failed');
+      }
+
       const data = await response.json();
-
-      if (response.status === 429) {
-        return { success: false, error: 'Too many login attempts. Please wait a moment before trying again.' };
-      }
-
-      if (response.ok) {
-        const userWithStatus = {
-          ...data.user,
-          status: 'online'
-        };
-        setToken(data.token);
-        setUser(userWithStatus);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(userWithStatus));
-        clearUIState();
-        await refreshUser(); // Always fetch latest profile after login
-        return { success: true };
-      } else {
-        return { success: false, error: data.message || 'Login failed' };
-      }
+      console.log('[AUTH DEBUG] Login success data:', data);
+      
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
     } catch (error) {
-      return { success: false, error: 'Network error' };
+      console.error('[AUTH DEBUG] Login error:', error);
+      throw error;
     }
   };
 
-  const register = async (username, password) => {
+  const register = async (username, password, name = null) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`, {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      if (!backendUrl) {
+        throw new Error('VITE_BACKEND_URL environment variable is not set');
+      }
+      console.log('[AUTH DEBUG] Register attempt:', { username, name, backendUrl });
+      
+      const response = await fetch(`${backendUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, name }),
       });
 
-      const data = await response.json();
+      console.log('[AUTH DEBUG] Register response status:', response.status);
+      console.log('[AUTH DEBUG] Register response headers:', Object.fromEntries(response.headers.entries()));
 
-      if (response.ok) {
-        const userWithStatus = {
-          ...data.user,
-          status: 'online'
-        };
-        setToken(data.token);
-        setUser(userWithStatus);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(userWithStatus));
-        clearUIState();
-        await refreshUser(); // Always fetch latest profile after register
-        return { success: true };
-      } else {
-        return { success: false, error: data.message };
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('[AUTH DEBUG] Register error response:', errorData);
+        throw new Error(errorData.error || 'Registration failed');
       }
+
+      const data = await response.json();
+      console.log('[AUTH DEBUG] Register success data:', data);
+      
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
     } catch (error) {
-      return { success: false, error: 'Network error' };
+      console.error('[AUTH DEBUG] Register error:', error);
+      throw error;
     }
   };
 

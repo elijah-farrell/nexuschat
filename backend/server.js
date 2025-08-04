@@ -258,9 +258,8 @@ if (!PORT) {
 }
 
 // Test DB connection and start server only if successful
-pool.getConnection()
-  .then(connection => {
-    connection.release();
+pool.query('SELECT 1')
+  .then(() => {
     server.listen(PORT, () => {
       console.log(`\n✅ NexusChat server running!`);
       console.log(`   🚀 Port: ${PORT}`);

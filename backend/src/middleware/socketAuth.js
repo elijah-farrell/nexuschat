@@ -1,40 +1,32 @@
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/database');
+const { queryOne } = require('../config/database');
 
-// Socket.IO authentication middleware
-const socketAuth = async (socket, next) => {
+const socketAuth = (socket, next) => {
   try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+    const token = socket.handshake.auth.token;
     
     if (!token) {
-      return next(new Error('Authentication token required'));
+      return next(new Error('Authentication error: No token provided'));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from database
-    const [users] = await query(
-      'SELECT id, username, name, email, status FROM users WHERE id = ?',
+    // Get user from database to ensure they still exist
+    const user = queryOne(
+      'SELECT id, username FROM users WHERE id = ?',
       [decoded.userId]
     );
 
-    if (users.length === 0) {
-      return next(new Error('User not found'));
+    if (!user) {
+      return next(new Error('Authentication error: User not found'));
     }
 
-    // Attach user to socket
-    socket.user = users[0];
-    socket.userId = users[0].id;
-    
+    socket.userId = user.id;
+    socket.username = user.username;
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return next(new Error('Invalid token'));
-    }
-    if (error.name === 'TokenExpiredError') {
-      return next(new Error('Token expired'));
-    }
-    next(new Error('Authentication failed'));
+    console.error('Socket authentication error:', error);
+    return next(new Error('Authentication error: Invalid token'));
   }
 };
 

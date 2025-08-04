@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { execute } = require('../config/database');
+const { queryOne } = require('../config/database');
 
 // Middleware to verify JWT token
 const auth = async (req, res, next) => {
@@ -14,16 +14,16 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database to ensure they still exist
-    const [users] = await execute(
+    const user = queryOne(
       'SELECT id, username, name, email, bio, profile_picture, status FROM users WHERE id = ?',
       [decoded.userId]
     );
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    req.user = users[0];
+    req.user = user;
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);

@@ -97,15 +97,18 @@ io.on('connection', (socket) => {
 
   // Update user status to online (only if this is the first session)
   if (userSockets.get(socket.userId).size === 1) {
-    query(
-      'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
-      ['online', socket.userId]
-    ).then(() => {
+    try {
+      query(
+        'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+        ['online', socket.userId]
+      );
       // Emit user online event to all clients
       io.emit('user_online', { userId: socket.userId });
       // Emit user_status_update event to all clients
       io.emit('user_status_update', { userId: socket.userId, status: 'online' });
-    }).catch(err => console.error('Error updating user status:', err));
+    } catch (err) {
+      console.error('Error updating user status:', err);
+    }
   }
 
   // Handle typing indicators
@@ -162,15 +165,18 @@ io.on('connection', (socket) => {
         userSockets.delete(socket.userId);
         
         // Mark user offline immediately since no sessions remain
-        query(
-          'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
-          ['offline', socket.userId]
-        ).then(() => {
+        try {
+          query(
+            'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+            ['offline', socket.userId]
+          );
           // Emit user offline event to all clients
           io.emit('user_offline', { userId: socket.userId });
           // Emit user_status_update event to all clients
           io.emit('user_status_update', { userId: socket.userId, status: 'offline' });
-        }).catch(err => console.error('Error updating user status to offline:', err));
+        } catch (err) {
+          console.error('Error updating user status to offline:', err);
+        }
       }
     }
   });

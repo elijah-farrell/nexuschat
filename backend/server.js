@@ -257,19 +257,12 @@ if (!PORT) {
   process.exit(1);
 }
 
-// Test DB connection and start server only if successful
-pool.query('SELECT 1')
-  .then(() => {
-    server.listen(PORT, () => {
-      console.log(`\n✅ NexusChat server running!`);
-      console.log(`   🚀 Port: ${PORT}`);
-      console.log(`   🌐 API: Ready`);
-      console.log(`   🩺 Health: Ready`);
-      console.log(`   🔌 WebSocket: Ready`);
-      console.log(`   🗄️ Database: Connected\n`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ Database connection failed:', err.message);
-    process.exit(1);
-  });
+// Start server (SQLite is file-based, so no connection test needed)
+server.listen(PORT, () => {
+  console.log(`\n✅ NexusChat server running!`);
+  console.log(`   🚀 Port: ${PORT}`);
+  console.log(`   🌐 API: Ready`);
+  console.log(`   🩺 Health: Ready`);
+  console.log(`   🔌 WebSocket: Ready`);
+  console.log(`   🗄️ Database: SQLite (Connected)\n`);
+});

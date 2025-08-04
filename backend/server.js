@@ -47,10 +47,10 @@ app.use((_req, res, next) => {
 
 // CORS middleware (apply before rate limiting)
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL || true, // Allow all origins if FRONTEND_URL not set
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Origin"],
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
@@ -73,7 +73,7 @@ app.use('/api', generalLimiter);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || true, // Allow all origins if FRONTEND_URL not set
     methods: ["GET", "POST"],
     credentials: true
   }

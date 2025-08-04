@@ -4,9 +4,9 @@ A real-time messaging application built with React, Node.js, and Socket.IO - ins
 
 ## 🚀 Current Status
 
-**Backend**: ✅ Deployed to Render (PostgreSQL database)
-**Frontend**: 🔄 In progress - deploying to Render
-**Database**: ✅ PostgreSQL on Render
+**Backend**: ✅ Deployed to Render (SQLite database)
+**Frontend**: 🔄 In progress - deploying to Vercel
+**Database**: ✅ SQLite (file-based, no external dependencies)
 **Real-time Chat**: ✅ Working with Socket.IO
 
 ## 🛠️ Tech Stack
@@ -20,7 +20,7 @@ A real-time messaging application built with React, Node.js, and Socket.IO - ins
 ### Backend
 - **Node.js** with Express
 - **Socket.IO** for real-time messaging
-- **PostgreSQL** database (Render)
+- **SQLite** database (file-based, no external dependencies)
 - **JWT** for authentication
 - **Bcrypt** for password hashing
 - **Winston** for logging
@@ -48,26 +48,26 @@ A real-time messaging application built with React, Node.js, and Socket.IO - ins
 - **DM Messages**: Message content and metadata
 - **Friends**: Mutual friendship relationships
 - **Friend Requests**: Pending friend requests
+- **Message Reactions**: Emoji reactions on messages
+- **Message Attachments**: File attachments for messages
+- **Servers**: Server system (for future features)
+- **Channels**: Server channels
+- **Server Messages**: Messages in server channels
 
 ## 🚀 Deployment
 
 ### Render Deployment (Current)
-- **Backend**: Node.js service on Render
-- **Database**: PostgreSQL on Render
-- **Frontend**: Static site on Render (in progress)
+- **Backend**: Node.js service on Render with SQLite
+- **Database**: SQLite file-based database (no external dependencies)
+- **Frontend**: Static site on Vercel (in progress)
 
 ### Environment Variables
 Backend requires:
 ```
-DB_HOST=your_render_postgres_host
-DB_USER=nexuschat_user
-DB_PASSWORD=your_postgres_password
-DB_NAME=nexuschat
-DB_PORT=5432
 JWT_SECRET=your_secure_jwt_secret
 PORT=3000
 NODE_ENV=production
-FRONTEND_URL=https://your-frontend-domain.onrender.com
+FRONTEND_URL=https://your-frontend-domain.vercel.app
 LOG_LEVEL=info
 ```
 
@@ -134,8 +134,8 @@ nexuschat/
 
 4. **Database setup**
    ```bash
-   # Import PostgreSQL schema
-   psql -h localhost -U your_user -d nexuschat < database/schema-postgres.sql
+   # SQLite database is created automatically on first run
+   # No additional setup required
    ```
 
 ## 🎯 Features

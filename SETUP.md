@@ -2,8 +2,8 @@
 
 ## Prerequisites
 - Node.js 18 or higher
-- MySQL 8.0 or higher
 - npm or yarn
+- **No database setup required** (SQLite is file-based)
 
 ## Setup
 
@@ -13,26 +13,16 @@
    cd nexuschat
    ```
 
-2. Set up the database
-   ```bash
-   mysql -u root -p
-   CREATE DATABASE nexuschat;
-   USE nexuschat;
-   SOURCE database/schema.sql;
-   ```
-
-3. Configure environment variables
+2. Configure environment variables
    
    Create `.env` files in both backend and frontend directories:
    
    **Backend (.env):**
    ```
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=your_password
-   DB_NAME=nexuschat
    JWT_SECRET=your_secret_key
    PORT=3000
+   FRONTEND_URL=http://localhost:5173
+   LOG_LEVEL=info
    ```
    
    **Frontend (.env):**
@@ -40,7 +30,7 @@
    VITE_BACKEND_URL=http://localhost:3000
    ```
 
-4. Install dependencies and start the servers
+3. Install dependencies and start the servers
    ```bash
    # Backend
    cd backend
@@ -53,4 +43,14 @@
    npm run dev
    ```
 
-5. Open http://localhost:5173 in your browser 
+4. Open http://localhost:5173 in your browser
+
+## Database
+
+The application uses **SQLite** which is:
+- **File-based**: No external database server required
+- **Automatic**: Database and tables are created automatically on first run
+- **Portable**: Database file is included in the project (but not tracked in Git)
+- **Zero-config**: No additional setup required
+
+The SQLite database file (`nexuschat.db`) will be created automatically in the `backend/` directory when you first run the application. 

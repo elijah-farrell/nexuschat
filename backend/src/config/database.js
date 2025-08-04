@@ -96,6 +96,90 @@ const createTables = () => {
     )
   `);
 
+  // Message reactions table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS message_reactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      emoji TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (message_id, user_id, emoji),
+      FOREIGN KEY (message_id) REFERENCES dm_messages(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Message attachments table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS message_attachments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL,
+      file_name TEXT NOT NULL,
+      file_url TEXT NOT NULL,
+      file_type TEXT,
+      file_size INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (message_id) REFERENCES dm_messages(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Servers table (for future server functionality)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS servers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      icon_url TEXT,
+      owner_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Server members table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS server_members (
+      server_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      role TEXT DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'moderator', 'member')),
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (server_id, user_id),
+      FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Channels table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channels (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT DEFAULT 'text' CHECK (type IN ('text', 'voice', 'announcement')),
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Server messages table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      channel_id INTEGER NOT NULL,
+      sender_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      message_type TEXT DEFAULT 'text' CHECK (message_type IN ('text', 'file', 'image', 'embed')),
+      file_url TEXT,
+      is_pinned BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE,
+      FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes
   db.exec('CREATE INDEX IF NOT EXISTS idx_dm_messages_dm_id ON dm_messages(dm_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_dm_messages_created_at ON dm_messages(created_at)');
@@ -111,6 +195,16 @@ const createTables = () => {
   db.exec('CREATE INDEX IF NOT EXISTS idx_friend_requests_sender_id ON friend_requests(sender_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_friend_requests_recipient_id ON friend_requests(recipient_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_friend_requests_status ON friend_requests(status)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_message_reactions_message_id ON message_reactions(message_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_message_reactions_user_id ON message_reactions(user_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_message_attachments_message_id ON message_attachments(message_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_servers_owner_id ON servers(owner_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_server_members_server_id ON server_members(server_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_server_members_user_id ON server_members(user_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_channels_server_id ON channels(server_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_messages_channel_id ON messages(channel_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at)');
 };
 
 // Initialize database

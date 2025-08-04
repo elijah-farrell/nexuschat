@@ -29,7 +29,7 @@ const getUserById = async (req, res) => {
       [userId]
     );
 
-    if (users.length === 0) {
+    if (!users) {
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -72,9 +72,9 @@ const getDMInfo = async (req, res) => {
   const userId = req.user.id;
   const { dmId } = req.params;
   const membership = query('SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?', [dmId, userId]);
-  if (!membership.length) return res.status(403).json({ error: 'Not a member' });
+  if (!membership) return res.status(403).json({ error: 'Not a member' });
   const dm = query('SELECT * FROM dm_conversations WHERE id = ?', [dmId]);
-  if (!dm.length) return res.status(404).json({ error: 'DM not found' });
+  if (!dm) return res.status(404).json({ error: 'DM not found' });
   const members = query(`
     SELECT u.id, u.username, u.name, u.profile_picture
     FROM dm_members m
@@ -89,14 +89,28 @@ const getDMMessages = async (req, res) => {
   const userId = req.user.id;
   const { dmId } = req.params;
   const membership = query('SELECT 1 FROM dm_members WHERE dm_id = ? AND user_id = ?', [dmId, userId]);
-  if (!membership.length) return res.status(403).json({ error: 'Not a member' });
+  if (!membership) return res.status(403).json({ error: 'Not a member' });
   const messages = query(`
-    SELECT m.*, u.username, u.name, u.profile_picture
+    SELECT m.id, m.dm_id, m.sender_id, m.content, m.message_type, m.is_read,
+           m.created_at, m.updated_at,
+           u.username, u.name, u.profile_picture
     FROM dm_messages m
     INNER JOIN users u ON m.sender_id = u.id
     WHERE m.dm_id = ?
     ORDER BY m.created_at ASC
   `, [dmId]);
+
+  // Convert timestamps to local time
+  for (const message of messages) {
+    if (message.created_at) {
+      const utcDate = new Date(message.created_at + ' UTC');
+      message.created_at = utcDate.toISOString();
+    }
+    if (message.updated_at) {
+      const utcDate = new Date(message.updated_at + ' UTC');
+      message.updated_at = utcDate.toISOString();
+    }
+  }
   res.json({ success: true, messages });
 };
 
@@ -104,21 +118,42 @@ const getDMMessages = async (req, res) => {
 const getOrCreateDM = async (req, res) => {
   const userId = req.user.id;
   const otherUserId = req.params.userId;
-  const existing = query(`
-    SELECT dc.id FROM dm_conversations dc
-    INNER JOIN dm_members m1 ON dc.id = m1.dm_id
-    INNER JOIN dm_members m2 ON dc.id = m2.dm_id
-    WHERE dc.type = 'dm' AND m1.user_id = ? AND m2.user_id = ?
-  `, [userId, otherUserId]);
-  let dmId;
-  if (existing.length) {
-    dmId = existing[0].id;
-  } else {
-    const result = query('INSERT INTO dm_conversations (type, created_by) VALUES (\'dm\', ?)', [userId]);
-    dmId = result.insertId;
-    query('INSERT INTO dm_members (dm_id, user_id) VALUES (?, ?), (?, ?)', [dmId, userId, dmId, otherUserId]);
+  
+  try {
+    // Check if DM already exists between these two users
+    const existing = query(`
+      SELECT dc.id FROM dm_conversations dc
+      INNER JOIN dm_members m1 ON dc.id = m1.dm_id
+      INNER JOIN dm_members m2 ON dc.id = m2.dm_id
+      WHERE dc.type = 'dm' AND m1.user_id = ? AND m2.user_id = ?
+    `, [userId, otherUserId]);
+    
+    let dmId;
+    let isNewDM = false;
+    if (existing && existing.id) {
+      // DM already exists
+      dmId = existing.id;
+    } else {
+      // Create new DM
+      const result = query('INSERT INTO dm_conversations (type, created_by) VALUES (\'dm\', ?)', [userId]);
+      dmId = result.lastInsertRowid;
+      
+      // Add both users to the DM
+      query('INSERT INTO dm_members (dm_id, user_id) VALUES (?, ?)', [dmId, userId]);
+      query('INSERT INTO dm_members (dm_id, user_id) VALUES (?, ?)', [dmId, otherUserId]);
+      isNewDM = true;
+    }
+    
+    // Emit dm_created event if this is a new DM
+    if (isNewDM && req.io) {
+      req.io.emit('dm_created', { dm_id: dmId, user_id: userId, other_user_id: otherUserId });
+    }
+    
+    res.json({ success: true, dm_id: dmId });
+  } catch (error) {
+    console.error('Get or create DM error:', error);
+    res.status(500).json({ error: 'Failed to create DM' });
   }
-  res.json({ success: true, dm_id: dmId });
 };
 
 // Send a message to a DM conversation
@@ -138,7 +173,7 @@ const sendDMMessage = async (req, res) => {
       [dmId, senderId]
     );
 
-    if (membership.length === 0) {
+    if (!membership) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -149,24 +184,38 @@ const sendDMMessage = async (req, res) => {
 
     // Get the created message with user info
     const messages = query(`
-      SELECT dm.*, u.username, u.name, u.profile_picture
+      SELECT dm.id, dm.dm_id, dm.sender_id, dm.content, dm.message_type, dm.is_read, 
+             dm.created_at, dm.updated_at,
+             u.username, u.name, u.profile_picture
       FROM dm_messages dm
       INNER JOIN users u ON dm.sender_id = u.id
       WHERE dm.id = ?
-    `, [result.insertId]);
+    `, [result.lastInsertRowid]);
+
+    // Convert timestamps to local time
+    for (const message of messages) {
+      if (message.created_at) {
+        const utcDate = new Date(message.created_at + ' UTC');
+        message.created_at = utcDate.toISOString();
+      }
+      if (message.updated_at) {
+        const utcDate = new Date(message.updated_at + ' UTC');
+        message.updated_at = utcDate.toISOString();
+      }
+    }
 
     // Emit the new message to all users in the DM
     if (req.io) {
       req.io.to(`dm_${dmId}`).emit('new_message', {
         dm_id: dmId,
-        message: messages[0]
+        message: messages
       });
     }
 
     res.status(201).json({
       success: true,
       message: 'Message sent successfully',
-      message: messages[0]
+      message: messages
     });
   } catch (error) {
     console.error('Send DM message error:', error);
@@ -188,7 +237,7 @@ const getUnreadMessageCount = async (req, res) => {
 
     res.json({
       success: true,
-      unread_count: result[0].unread_count
+      unread_count: result.unread_count
     });
   } catch (error) {
     console.error('Get unread count error:', error);
@@ -283,7 +332,7 @@ const createGroupDM = async (req, res) => {
   }
   const allMemberIds = memberIds.includes(userId) ? memberIds : [userId, ...memberIds];
   const result = query('INSERT INTO dm_conversations (type, name, created_by) VALUES (\'group\', ?, ?)', [name, userId]);
-  const dmId = result.insertId;
+  const dmId = result.lastInsertRowid;
   const memberValues = allMemberIds.map(uid => [dmId, uid]);
   query('INSERT INTO dm_members (dm_id, user_id) VALUES ?', [memberValues]);
   res.status(201).json({ success: true, dm_id: dmId });
@@ -306,7 +355,7 @@ const addGroupMembers = async (req, res) => {
       [dmId, currentUserId]
     );
 
-    if (membership.length === 0) {
+    if (!membership) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -316,7 +365,7 @@ const addGroupMembers = async (req, res) => {
       [dmId]
     );
 
-    if (conversation.length === 0 || conversation[0].type !== 'group') {
+    if (!conversation || conversation.type !== 'group') {
       return res.status(400).json({ error: 'Not a group DM' });
     }
 
@@ -349,7 +398,7 @@ const removeGroupMember = async (req, res) => {
       [dmId, currentUserId]
     );
 
-    if (membership.length === 0) {
+    if (!membership) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -359,12 +408,12 @@ const removeGroupMember = async (req, res) => {
       [dmId]
     );
 
-    if (conversation.length === 0 || conversation[0].type !== 'group') {
+    if (!conversation || conversation.type !== 'group') {
       return res.status(400).json({ error: 'Not a group DM' });
     }
 
     // Only creator can remove members (or user can leave themselves)
-    if (conversation[0].created_by !== currentUserId && currentUserId !== parseInt(userId)) {
+    if (conversation.created_by !== currentUserId && currentUserId !== parseInt(userId)) {
       return res.status(403).json({ error: 'Only group creator can remove members' });
     }
 
@@ -395,7 +444,7 @@ const getGroupDMDetails = async (req, res) => {
       [dmId, currentUserId]
     );
 
-    if (membership.length === 0) {
+    if (!membership) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -423,13 +472,13 @@ const getGroupDMDetails = async (req, res) => {
       GROUP BY dc.id
     `, [dmId]);
 
-    if (groupDetails.length === 0) {
+    if (!groupDetails) {
       return res.status(404).json({ error: 'Group DM not found' });
     }
 
     res.json({
       success: true,
-      groupDM: groupDetails[0]
+      groupDM: groupDetails
     });
   } catch (error) {
     console.error('Get group DM details error:', error);
@@ -454,11 +503,11 @@ const updateGroupDMName = async (req, res) => {
       [dmId]
     );
 
-    if (conversation.length === 0) {
+    if (!conversation) {
       return res.status(404).json({ error: 'Group DM not found' });
     }
 
-    if (conversation[0].created_by !== currentUserId) {
+    if (conversation.created_by !== currentUserId) {
       return res.status(403).json({ error: 'Only group creator can update name' });
     }
 
@@ -498,7 +547,7 @@ const addMessageReaction = async (req, res) => {
       WHERE m.id = ? OR dm.id = ?
     `, [messageId, messageId, messageId]);
 
-    if (message.length === 0) {
+    if (!message) {
       return res.status(404).json({ error: 'Message not found' });
     }
 
@@ -522,7 +571,7 @@ const getEnhancedDMs = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Get all DM conversations with enhanced info
-    const [dms] = query(`
+    const dms = query(`
       SELECT 
         dc.id,
         dc.type,
@@ -579,9 +628,21 @@ const getEnhancedDMs = async (req, res) => {
       ORDER BY (last_message_time IS NULL), last_message_time DESC, dc.created_at DESC
     `, [currentUserId, currentUserId, currentUserId, currentUserId, currentUserId, currentUserId, currentUserId]);
 
+    // Convert timestamps to local time after querying
+    for (const dm of dms) {
+      if (dm.created_at) {
+        const utcDate = new Date(dm.created_at + ' UTC');
+        dm.created_at = utcDate.toISOString();
+      }
+      if (dm.last_message_time) {
+        const utcDate = new Date(dm.last_message_time + ' UTC');
+        dm.last_message_time = utcDate.toISOString();
+      }
+    }
+
     // Attach members array to each DM
     for (const dm of dms) {
-      const [members] = query(`
+      const members = query(`
         SELECT u.id, u.username, u.name, u.profile_picture
         FROM dm_members m
         INNER JOIN users u ON m.user_id = u.id

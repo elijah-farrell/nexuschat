@@ -753,7 +753,6 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
         secondary={getStatusText(getLiveStatus(friend))}
         primaryTypographyProps={{
           component: 'div',
-          sx: { color: 'text.secondary' },
         }}
         secondaryTypographyProps={{
           component: 'div',
@@ -1322,6 +1321,12 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                                 </Typography>
                               </Box>
                             }
+                            primaryTypographyProps={{
+                              component: 'div',
+                            }}
+                            secondaryTypographyProps={{
+                              component: 'div',
+                            }}
                           />
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <IconButton

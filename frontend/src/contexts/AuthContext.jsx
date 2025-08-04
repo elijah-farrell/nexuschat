@@ -57,6 +57,17 @@ export const AuthProvider = ({ children }) => {
   // Enhanced loading state that includes socket connection
   const isFullyReady = isReady && (!user || (user && (isConnected || isConnectingState === false)));
 
+  // Debug logging
+  useEffect(() => {
+    console.log('[AUTH DEBUG] Loading state:', {
+      isReady,
+      user: !!user,
+      isConnected,
+      isConnectingState,
+      isFullyReady
+    });
+  }, [isReady, user, isConnected, isConnectingState, isFullyReady]);
+
   // Fallback: if socket connection takes too long, allow app to load anyway
   useEffect(() => {
     if (user && isReady && !isConnected && !isConnectingState) {
@@ -68,6 +79,19 @@ export const AuthProvider = ({ children }) => {
       return () => clearTimeout(timeout);
     }
   }, [user, isReady, isConnected, isConnectingState]);
+
+  // Additional fallback: if loading takes too long, force ready state
+  useEffect(() => {
+    if (!isReady) {
+      const timeout = setTimeout(() => {
+        console.log('[AUTH DEBUG] Auth initialization timeout, forcing ready state');
+        setLoading(false);
+        setIsReady(true);
+      }, 10000); // 10 seconds timeout
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isReady]);
 
   // Periodically update user status (every 30 seconds)
   useEffect(() => {

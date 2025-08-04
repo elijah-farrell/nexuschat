@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, createTheme } from '@mui/material';
+import { ThemeProvider, CssBaseline, createTheme, Button } from '@mui/material';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -13,10 +13,11 @@ import { Box, CircularProgress, Typography, Fade } from '@mui/material';
 
 // AppLoading component defined directly in App.jsx
 const AppLoading = ({ children }) => {
-  const { isFullyReady, user } = useAuth();
+  const { isFullyReady, user, logout } = useAuth();
   const location = window.location.pathname;
   const isAuthPage = location === '/login' || location === '/register';
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+  const [showRetryButton, setShowRetryButton] = useState(false);
 
   // Show timeout message after 10 seconds if still loading
   useEffect(() => {
@@ -25,11 +26,25 @@ const AppLoading = ({ children }) => {
         setShowTimeoutMessage(true);
       }, 10000); // 10 seconds
 
-      return () => clearTimeout(timeout);
+      const retryTimeout = setTimeout(() => {
+        setShowRetryButton(true);
+      }, 15000); // 15 seconds
+
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(retryTimeout);
+      };
     } else {
       setShowTimeoutMessage(false);
+      setShowRetryButton(false);
     }
   }, [isFullyReady, isAuthPage]);
+
+  const handleRetry = () => {
+    // Clear all auth state and reload
+    logout();
+    window.location.reload();
+  };
 
   // Show loading screen if not fully ready and not on auth pages
   if (!isFullyReady && !isAuthPage) {
@@ -54,6 +69,21 @@ const AppLoading = ({ children }) => {
               <Typography variant="body2" color="warning.main" sx={{ mt: 2 }}>
                 Taking longer than expected. You can still use the app without real-time features.
               </Typography>
+            )}
+            {showRetryButton && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" color="error.main" sx={{ mb: 1 }}>
+                  Still having issues?
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  color="primary" 
+                  onClick={handleRetry}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Retry Connection
+                </Button>
+              </Box>
             )}
           </Box>
         </Box>

@@ -1,27 +1,8 @@
--- NexusChat Database Schema
-
--- Create database (if it doesn't exist)
-CREATE DATABASE IF NOT EXISTS nexuschat;
-USE nexuschat;
-
--- Drop existing tables if they exist (in correct order due to foreign keys)
-DROP TABLE IF EXISTS message_reactions;
-DROP TABLE IF EXISTS message_attachments;
-DROP TABLE IF EXISTS dm_messages;
-DROP TABLE IF EXISTS dm_members;
-DROP TABLE IF EXISTS dm_conversations;
-DROP TABLE IF EXISTS direct_messages;
-DROP TABLE IF EXISTS friend_requests;
-DROP TABLE IF EXISTS friends;
-DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS channels;
-DROP TABLE IF EXISTS server_members;
-DROP TABLE IF EXISTS servers;
-DROP TABLE IF EXISTS users;
+-- NexusChat PostgreSQL Schema
 
 -- Users table
 CREATE TABLE users (
-  id INT PRIMARY KEY AUTO_INCREMENT,
+  id SERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   name VARCHAR(100),
@@ -29,25 +10,25 @@ CREATE TABLE users (
   bio TEXT,
   profile_picture TEXT,
   banner_color VARCHAR(7) DEFAULT '#5865F2',
-  status ENUM('online', 'offline', 'away', 'dnd') DEFAULT 'offline',
+  status VARCHAR(20) DEFAULT 'offline' CHECK (status IN ('online', 'offline', 'away', 'dnd')),
   last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- DM conversations table (for 1-on-1 and group DMs)
 CREATE TABLE dm_conversations (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  type ENUM('dm', 'group') NOT NULL DEFAULT 'dm',
+  id SERIAL PRIMARY KEY,
+  type VARCHAR(10) NOT NULL DEFAULT 'dm' CHECK (type IN ('dm', 'group')),
   name VARCHAR(100), -- for group DM names
-  created_by INT,    -- user who created the group DM
+  created_by INTEGER,    -- user who created the group DM
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- DM members table (who's in each DM conversation)
 CREATE TABLE dm_members (
-  dm_id INT NOT NULL,
-  user_id INT NOT NULL,
+  dm_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (dm_id, user_id),
   FOREIGN KEY (dm_id) REFERENCES dm_conversations(id) ON DELETE CASCADE,
@@ -56,39 +37,39 @@ CREATE TABLE dm_members (
 
 -- DM messages table (messages in DM conversations)
 CREATE TABLE dm_messages (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  dm_id INT NOT NULL,
-  sender_id INT NOT NULL,
+  id SERIAL PRIMARY KEY,
+  dm_id INTEGER NOT NULL,
+  sender_id INTEGER NOT NULL,
   content TEXT NOT NULL,
-  message_type ENUM('text', 'file', 'image', 'embed') DEFAULT 'text',
+  message_type VARCHAR(10) DEFAULT 'text' CHECK (message_type IN ('text', 'file', 'image', 'embed')),
   file_url TEXT,
   is_read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (dm_id) REFERENCES dm_conversations(id) ON DELETE CASCADE,
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Friends table (mutual friendship)
 CREATE TABLE friends (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  friend_id INT NOT NULL,
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  friend_id INTEGER NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_friendship (user_id, friend_id),
+  UNIQUE (user_id, friend_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Friend requests table
 CREATE TABLE friend_requests (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  sender_id INT NOT NULL,
-  recipient_id INT NOT NULL,
-  status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
+  id SERIAL PRIMARY KEY,
+  sender_id INTEGER NOT NULL,
+  recipient_id INTEGER NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_request (sender_id, recipient_id),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (sender_id, recipient_id),
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -109,4 +90,21 @@ CREATE INDEX idx_friend_requests_sender_id ON friend_requests(sender_id);
 CREATE INDEX idx_friend_requests_recipient_id ON friend_requests(recipient_id);
 CREATE INDEX idx_friend_requests_status ON friend_requests(status);
 
-SELECT 'NexusChat database schema created successfully!' as status; 
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger for dm_messages
+CREATE TRIGGER update_dm_messages_updated_at BEFORE UPDATE ON dm_messages
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Create trigger for friend_requests
+CREATE TRIGGER update_friend_requests_updated_at BEFORE UPDATE ON friend_requests
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+SELECT 'NexusChat PostgreSQL database schema created successfully!' as status; 

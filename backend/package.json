@@ -17,7 +17,7 @@
     "real-time",
     "api",
     "express",
-    "mysql"
+    "postgresql"
   ],
   "author": "NexusChat Team",
   "license": "MIT",
@@ -30,7 +30,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
-    "mysql2": "^3.6.0",
+    "pg": "^8.11.0",
     "socket.io": "^4.8.1",
     "winston": "^3.17.0"
   },

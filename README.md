@@ -1,29 +1,180 @@
 # NexusChat
 
-[![React](https://img.shields.io/badge/React-18.2.0-61DAFB?style=flat&logo=react)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-4.0-646CFF?style=flat&logo=vite)](https://vitejs.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18.0.0-339933?style=flat&logo=node.js)](https://nodejs.org/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql)](https://www.mysql.com/)
-[![Socket.io](https://img.shields.io/badge/Socket.io-4.7.0-010101?style=flat&logo=socket.io)](https://socket.io/)
+A real-time messaging application built with React, Node.js, and Socket.IO - inspired by Discord.
 
-A full-stack real-time messaging web application
+## 🚀 Current Status
 
-## What it does
+**Backend**: ✅ Deployed to Render (PostgreSQL database)
+**Frontend**: 🔄 In progress - deploying to Render
+**Database**: ✅ PostgreSQL on Render
+**Real-time Chat**: ✅ Working with Socket.IO
 
-NexusChat is a comprehensive messaging platform where users can register accounts, customize profiles with avatars, and manage their online presence. Users can send friend requests, build their social network using both direct messages and group conversations with real-time message delivery via WebSocket connections.
+## 🛠️ Tech Stack
 
-The platform features a modern dashboard showing recent activity, friend status updates, and conversation history. Users can change usernames, delete their account, and enjoy a responsive interface with dark/light themes that works seamlessly on both desktop and mobile devices.
+### Frontend
+- **React** with Vite
+- **Material-UI** for components
+- **Socket.IO Client** for real-time communication
+- **React Router** for navigation
 
-The app handles user authentication with JWT tokens and bcrypt password hashing for secure login, stores messages in a MySQL database with connection pooling for optimal performance, and provides real-time status indicators with smooth animations and transitions for an engaging user experience.
+### Backend
+- **Node.js** with Express
+- **Socket.IO** for real-time messaging
+- **PostgreSQL** database (Render)
+- **JWT** for authentication
+- **Bcrypt** for password hashing
+- **Winston** for logging
 
-## Tech Stack
+### Security Features
+- Account lockout protection (5 failed attempts = 15min lock)
+- Input sanitization to prevent SQL injection
+- Rate limiting (5 login attempts per 15min)
+- JWT token authentication
+- Password hashing with bcrypt
 
-**Frontend:** React 18, Vite, Material-UI, Socket.io Client  
-**Backend:** Node.js, Express, Socket.io, MySQL  
-**Database:** MySQL with connection pooling  
-**Authentication:** JWT tokens, bcrypt password hashing  
-**Development:** ESLint, Git  
+## 🏗️ Architecture
 
-## Getting Started
+### Core Features
+- **Real-time messaging** with Socket.IO
+- **User authentication** with JWT tokens
+- **Friend system** with requests and management
+- **Direct messaging** (1-on-1 and group DMs)
+- **User profiles** with status indicators
+- **Real-time status updates** (online/offline)
 
-See [SETUP.md](SETUP.md) for installation and setup instructions.
+### Database Schema
+- **Users**: Authentication, profiles, status
+- **DM Conversations**: 1-on-1 and group chats
+- **DM Messages**: Message content and metadata
+- **Friends**: Mutual friendship relationships
+- **Friend Requests**: Pending friend requests
+
+## 🚀 Deployment
+
+### Render Deployment (Current)
+- **Backend**: Node.js service on Render
+- **Database**: PostgreSQL on Render
+- **Frontend**: Static site on Render (in progress)
+
+### Environment Variables
+Backend requires:
+```
+DB_HOST=your_render_postgres_host
+DB_USER=nexuschat_user
+DB_PASSWORD=your_postgres_password
+DB_NAME=nexuschat
+DB_PORT=5432
+JWT_SECRET=your_secure_jwt_secret
+PORT=3000
+NODE_ENV=production
+FRONTEND_URL=https://your-frontend-domain.onrender.com
+LOG_LEVEL=info
+```
+
+Frontend requires:
+```
+VITE_BACKEND_URL=https://your-backend-domain.onrender.com
+```
+
+## 📁 Project Structure
+
+```
+nexuschat/
+├── backend/                 # Node.js API server
+│   ├── src/
+│   │   ├── api/            # Route handlers
+│   │   ├── config/         # Database, auth config
+│   │   ├── middleware/     # Auth middleware
+│   │   └── utils/          # Utilities
+│   └── server.js           # Main server file
+├── frontend/               # React application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── contexts/       # React contexts
+│   │   ├── pages/          # Page components
+│   │   └── utils/          # Utilities
+│   └── package.json
+├── database/               # Database schemas
+│   ├── schema-postgres.sql # Current PostgreSQL schema
+│   └── schema-mysql-deprecated.sql # Old MySQL schema
+└── README.md
+```
+
+## 🔧 Development
+
+### Prerequisites
+- Node.js 16+
+- PostgreSQL (for local development)
+- npm or yarn
+
+### Local Setup
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/elijah-farrell/nexuschat.git
+   cd nexuschat
+   ```
+
+2. **Backend setup**
+   ```bash
+   cd backend
+   npm install
+   cp .env.example .env
+   # Update .env with your database details
+   npm run dev
+   ```
+
+3. **Frontend setup**
+   ```bash
+   cd frontend
+   npm install
+   cp .env.example .env
+   # Update .env with backend URL
+   npm run dev
+   ```
+
+4. **Database setup**
+   ```bash
+   # Import PostgreSQL schema
+   psql -h localhost -U your_user -d nexuschat < database/schema-postgres.sql
+   ```
+
+## 🎯 Features
+
+### Authentication
+- User registration and login
+- JWT token-based authentication
+- Account lockout protection
+- Secure password hashing
+
+### Messaging
+- Real-time direct messaging
+- Group DM support
+- Message read status
+- Typing indicators
+
+### User Management
+- Friend requests and management
+- User profiles with status
+- Real-time status updates
+- Profile picture uploads
+
+### Security
+- Input sanitization
+- Rate limiting
+- CORS protection
+- SQL injection prevention
+
+## 📝 License
+
+MIT License - see LICENSE file for details.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📞 Support
+
+For issues or questions, please open an issue on GitHub.

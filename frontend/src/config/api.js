@@ -1,21 +1,19 @@
 // API Configuration
 const getApiUrl = () => {
-  // In production, use the Railway backend URL
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_BACKEND_URL || 'https://nexuschat-backend-production.up.railway.app';
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  if (!backendUrl) {
+    throw new Error('VITE_BACKEND_URL environment variable is not set');
   }
-  
-  // In development, use local backend
-  return import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  return backendUrl;
 };
 
 export const API_BASE_URL = getApiUrl();
 
 // Socket.IO configuration
 export const getSocketUrl = () => {
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_BACKEND_URL || 'https://nexuschat-backend-production.up.railway.app';
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  if (!backendUrl) {
+    throw new Error('VITE_BACKEND_URL environment variable is not set');
   }
-  
-  return import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  return backendUrl;
 }; 

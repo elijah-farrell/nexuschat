@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 
 // Validate required environment variables
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
@@ -14,9 +14,7 @@ const dbConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+  port: process.env.DB_PORT || 5432,
   // Add SSL configuration for production
   ...(process.env.NODE_ENV === 'production' && {
     ssl: {
@@ -25,11 +23,11 @@ const dbConfig = {
   })
 };
 
-const pool = mysql.createPool(dbConfig);
+const pool = new Pool(dbConfig);
 
 // Export both pool and a query function for convenience
 module.exports = {
   pool,
   query: (...args) => pool.query(...args),
-  execute: (...args) => pool.execute(...args)
+  execute: (...args) => pool.query(...args) // PostgreSQL uses query for both
 }; 

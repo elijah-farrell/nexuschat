@@ -19,6 +19,8 @@ router.post('/logout', authMiddleware, authController.logout);
 router.put('/username', authMiddleware, authController.updateUsername);
 router.delete('/account', authMiddleware, authController.deleteAccount);
 router.get('/stats', authMiddleware, authController.getUserStats);
+// Database stats route (for debugging)
+router.get('/db-stats', authMiddleware, authController.getDatabaseStats);
 
 // Temporary database viewer endpoint (remove in production)
 router.get('/db-view', async (req, res) => {

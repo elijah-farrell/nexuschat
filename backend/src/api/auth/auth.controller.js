@@ -595,6 +595,62 @@ const getUserStats = async (req, res) => {
   }
 };
 
+// Database stats endpoint (for admin/debugging)
+const getDatabaseStats = async (req, res) => {
+  try {
+    // Get counts for each table
+    const userCount = query('SELECT COUNT(*) as count FROM users')[0]?.count || 0;
+    const dmConversationCount = query('SELECT COUNT(*) as count FROM dm_conversations')[0]?.count || 0;
+    const dmMessageCount = query('SELECT COUNT(*) as count FROM dm_messages')[0]?.count || 0;
+    const friendCount = query('SELECT COUNT(*) as count FROM friends')[0]?.count || 0;
+    const friendRequestCount = query('SELECT COUNT(*) as count FROM friend_requests')[0]?.count || 0;
+
+    // Get recent activity
+    const recentUsers = query(`
+      SELECT id, username, name, status, last_seen, created_at 
+      FROM users 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `);
+
+    const recentMessages = query(`
+      SELECT dm.id, dm.content, dm.created_at, u.username as sender
+      FROM dm_messages dm
+      JOIN users u ON dm.sender_id = u.id
+      ORDER BY dm.created_at DESC 
+      LIMIT 10
+    `);
+
+    // Get table schemas
+    const tables = query(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' 
+      ORDER BY name
+    `);
+
+    res.json({
+      success: true,
+      stats: {
+        counts: {
+          users: userCount,
+          dmConversations: dmConversationCount,
+          dmMessages: dmMessageCount,
+          friends: friendCount,
+          friendRequests: friendRequestCount
+        },
+        recentActivity: {
+          recentUsers,
+          recentMessages
+        },
+        tables: tables.map(t => t.name)
+      }
+    });
+  } catch (error) {
+    console.error('Database stats error:', error);
+    res.status(500).json({ error: 'Failed to get database stats' });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -607,5 +663,6 @@ module.exports = {
   checkUsername,
   updateUsername,
   deleteAccount,
-  getUserStats
+  getUserStats,
+  getDatabaseStats
 }; 

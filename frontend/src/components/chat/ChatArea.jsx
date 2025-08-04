@@ -15,8 +15,6 @@ import {
 } from '@mui/material';
 import {
   Send as SendIcon,
-  AttachFile as AttachFileIcon,
-  EmojiEmotions as EmojiIcon,
   MoreVert as MoreVertIcon,
   Group as GroupIcon,
   People as PeopleIcon,
@@ -976,18 +974,6 @@ const ChatArea = React.memo(({
             p: 1,
           }}
         >
-          <IconButton
-            size="small"
-            sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                bgcolor: 'action.selected',
-                color: 'text.primary',
-              },
-            }}
-          >
-            <AttachFileIcon />
-          </IconButton>
           <TextField
             fullWidth
             multiline
@@ -1019,18 +1005,6 @@ const ChatArea = React.memo(({
               },
             }}
           />
-          <IconButton
-            size="small"
-            sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                bgcolor: 'action.selected',
-                color: 'text.primary',
-              },
-            }}
-          >
-            <EmojiIcon />
-          </IconButton>
           <IconButton
             onClick={handleSendMessage}
             disabled={!message.trim() || sending}

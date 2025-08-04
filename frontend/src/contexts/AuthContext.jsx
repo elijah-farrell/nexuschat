@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
             setToken(null);
           }
         } catch (error) {
-          console.error('Auth initialization error:', error);
+          // Silently handle auth initialization errors
           localStorage.removeItem('token');
           setToken(null);
         }
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(userWithStatus)); // Always update localStorage
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      // handle refresh user errors
     }
   };
 
@@ -160,7 +160,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      if (!backendUrl) {
+        return { success: false, error: 'Backend URL not configured' };
+      }
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,7 +243,7 @@ export const AuthProvider = ({ children }) => {
         });
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      // Silently handle logout errors
     } finally {
       setUser(null);
       setToken(null);

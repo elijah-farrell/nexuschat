@@ -1,151 +1,98 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const { Pool } = require('pg');
 
-// Create database file in the backend directory
-const dbPath = path.join(__dirname, '../../nexuschat.db');
-const db = new Database(dbPath);
+// Database connection configuration
+let pool = null;
 
-// Enable foreign keys
-db.pragma('foreign_keys = ON');
-
-// Create tables if they don't exist
-const createTables = () => {
-  // Users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      name TEXT,
-      email TEXT,
-      bio TEXT,
-      profile_picture TEXT,
-      banner_color TEXT DEFAULT '#5865F2',
-      status TEXT DEFAULT 'offline' CHECK (status IN ('online', 'offline', 'away', 'dnd')),
-      last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // DM conversations table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS dm_conversations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT NOT NULL DEFAULT 'dm' CHECK (type IN ('dm', 'group')),
-      name TEXT,
-      created_by INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-    )
-  `);
-
-  // DM members table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS dm_members (
-      dm_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (dm_id, user_id),
-      FOREIGN KEY (dm_id) REFERENCES dm_conversations(id) ON DELETE CASCADE,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
-  // DM messages table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS dm_messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      dm_id INTEGER NOT NULL,
-      sender_id INTEGER NOT NULL,
-      content TEXT NOT NULL,
-      message_type TEXT DEFAULT 'text' CHECK (message_type IN ('text', 'file', 'image', 'embed')),
-      file_url TEXT,
-      is_read BOOLEAN DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (dm_id) REFERENCES dm_conversations(id) ON DELETE CASCADE,
-      FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
-  // Friends table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS friends (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      friend_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE (user_id, friend_id),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
-  // Friend requests table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS friend_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sender_id INTEGER NOT NULL,
-      recipient_id INTEGER NOT NULL,
-      status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE (sender_id, recipient_id),
-      FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
-
-
-  // Create indexes
-  db.exec('CREATE INDEX IF NOT EXISTS idx_dm_messages_dm_id ON dm_messages(dm_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_dm_messages_created_at ON dm_messages(created_at)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_dm_messages_sender_id ON dm_messages(sender_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_dm_members_dm_id ON dm_members(dm_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_dm_members_user_id ON dm_members(user_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_dm_conversations_type ON dm_conversations(type)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_dm_conversations_created_by ON dm_conversations(created_by)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_users_last_seen ON users(last_seen)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_friends_user_id ON friends(user_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_friends_friend_id ON friends(friend_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_friend_requests_sender_id ON friend_requests(sender_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_friend_requests_recipient_id ON friend_requests(recipient_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_friend_requests_status ON friend_requests(status)');
-
-
+const createPool = () => {
+  if (!process.env.DATABASE_URL) {
+    console.log('⚠️ DATABASE_URL not found - skipping database connection');
+    return null;
+  }
+  
+  try {
+    return new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      family: 4 // Force IPv4 to avoid IPv6 timeout issues
+    });
+  } catch (error) {
+    console.log('⚠️ Failed to create database pool - continuing without database');
+    return null;
+  }
 };
 
-// Initialize database
-createTables();
+// Test database connection
+const testConnection = async () => {
+  if (!pool) {
+    console.log('⚠️ No database pool - skipping connection test');
+    return;
+  }
+  
+  try {
+    const client = await pool.connect();
+    client.release();
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+    throw error;
+  }
+};
+
+// Initialize database connection only
+const initializeDatabase = async () => {
+  try {
+    pool = createPool();
+    if (pool) {
+      try {
+        await testConnection();
+      } catch (dbError) {
+        console.error('❌ Database connection failed:', dbError.message);
+        pool = null; // Clear the pool since connection failed
+      }
+    }
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error);
+    console.log('⚠️ Continuing without database connection');
+    pool = null;
+  }
+};
 
 // Helper function for queries
-const query = (sql, params = []) => {
+const query = async (sql, params = []) => {
+  if (!pool) {
+    throw new Error('Database not connected');
+  }
+  const client = await pool.connect();
   try {
-    if (sql.trim().toLowerCase().startsWith('select')) {
-      return db.prepare(sql).all(params);
-    } else {
-      return db.prepare(sql).run(params);
-    }
+    const result = await client.query(sql, params);
+    return result;
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
+  } finally {
+    client.release();
   }
 };
 
 // Helper function for single row queries
-const queryOne = (sql, params = []) => {
+const queryOne = async (sql, params = []) => {
+  if (!pool) {
+    throw new Error('Database not connected');
+  }
+  const client = await pool.connect();
   try {
-    return db.prepare(sql).get(params);
+    const result = await client.query(sql, params);
+    return result.rows[0];
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
+  } finally {
+    client.release();
   }
 };
 
 module.exports = {
-  db,
+  pool,
   query,
-  queryOne
+  queryOne,
+  initializeDatabase
 }; 

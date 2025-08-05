@@ -14,7 +14,8 @@ import {
   StepLabel,
   Zoom,
   Alert,
-  InputAdornment
+  InputAdornment,
+  Tooltip
 } from '@mui/material';
 import { 
   Person, 
@@ -25,7 +26,8 @@ import {
   LightMode,
   PersonAdd,
   ArrowBack,
-  ArrowForward
+  ArrowForward,
+  Info
 } from '@mui/icons-material';
 import PropTypes from 'prop-types';
 import { useAuth } from '../contexts/AuthContext';
@@ -242,27 +244,46 @@ const Register = ({ mode, setMode }) => {
   };
 
   const handleBack = () => {
+    // Clear password fields when going back to username step
+    if (activeStep === 1) {
+      setFormData(prev => ({
+        ...prev,
+        password: '',
+        confirmPassword: ''
+      }));
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+    }
     setActiveStep((prevStep) => prevStep - 1);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('🔍 REGISTER COMPONENT: Starting registration...');
+    
     // Final validation
     if (!validateStep(activeStep)) {
+      console.log('🔍 REGISTER COMPONENT: Validation failed');
       return;
     }
 
     setLoading(true);
     
     try {
+      console.log('🔍 REGISTER COMPONENT: Calling register function...');
       const result = await register(formData.username, formData.password);
+      console.log('🔍 REGISTER COMPONENT: Register result:', result);
+      
       if (result.success) {
-        navigate('/');
+        console.log('🔍 REGISTER COMPONENT: Registration successful, waiting for AuthContext to handle navigation...');
+        // Don't navigate here - let AuthContext handle it after state is set
       } else {
+        console.log('🔍 REGISTER COMPONENT: Registration failed:', result.error);
         setError(result.error || 'Registration failed. Username might be in use.');
       }
     } catch (error) {
+      console.log('🔍 REGISTER COMPONENT: Unexpected error:', error);
       setError('An unexpected error occurred during registration.');
     } finally {
       setLoading(false);
@@ -336,7 +357,31 @@ const Register = ({ mode, setMode }) => {
               startAdornment: <Person sx={{ 
                 mr: 1, 
                 color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)' 
-              }} />
+              }} />,
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip 
+                    title={
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                          Username Guidelines:
+                        </Typography>
+                        <Typography variant="body2" component="div" sx={{ fontSize: '0.875rem' }}>
+                          • 3-20 characters long<br/>
+                          • Letters, numbers, and underscores only<br/>
+                          • No spaces or special characters
+                        </Typography>
+                      </Box>
+                    }
+                    arrow
+                    placement="top"
+                  >
+                    <IconButton size="small" sx={{ color: mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>
+                      <Info fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              )
             }}
           />
         );
@@ -363,6 +408,26 @@ const Register = ({ mode, setMode }) => {
                 ),
                 endAdornment: (
                   <InputAdornment position="end">
+                    <Tooltip 
+                      title={
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                            Password Guidelines:
+                          </Typography>
+                          <Typography variant="body2" component="div" sx={{ fontSize: '0.875rem' }}>
+                            • 6-128 characters long<br/>
+                            • Use a strong, unique password<br/>
+                            • Consider using letters, numbers, and symbols
+                          </Typography>
+                        </Box>
+                      }
+                      arrow
+                      placement="top"
+                    >
+                      <IconButton size="small" sx={{ color: mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', mr: 0.5 }}>
+                        <Info fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <IconButton
                       aria-label="toggle password visibility"
                       onClick={() => setShowPassword(!showPassword)}
@@ -396,6 +461,26 @@ const Register = ({ mode, setMode }) => {
                 ),
                 endAdornment: (
                   <InputAdornment position="end">
+                    <Tooltip 
+                      title={
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                            Password Guidelines:
+                          </Typography>
+                          <Typography variant="body2" component="div" sx={{ fontSize: '0.875rem' }}>
+                            • 6-128 characters long<br/>
+                            • Use a strong, unique password<br/>
+                            • Consider using letters, numbers, and symbols
+                          </Typography>
+                        </Box>
+                      }
+                      arrow
+                      placement="top"
+                    >
+                      <IconButton size="small" sx={{ color: mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', mr: 0.5 }}>
+                        <Info fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <IconButton
                       aria-label="toggle password visibility"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}

@@ -1273,78 +1273,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                   <List>
                     {(Array.isArray(friendsSearchQuery ? filteredFriends : friends) ? (friendsSearchQuery ? filteredFriends : friends) : []).map((friend, idx) => (
                       <Grow in={true} timeout={500 + idx * 80} key={friend.id}>
-                        <ListItem
-                          key={friend.id}
-                          sx={{
-                            borderBottom: idx < (friendsSearchQuery ? filteredFriends : friends).length - 1 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                            '&:last-child': { borderBottom: 'none' }
-                          }}
-                        >
-                          <ListItemAvatar>
-                            <Avatar
-                              src={friend.profile_picture}
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                border: `2px solid ${getStatusColor(getLiveStatus(friend))}`,
-                              }}
-                            >
-                              {friend.username.charAt(0).toUpperCase()}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                                  {getDisplayName(friend) || friend.username}
-                                </Typography>
-                                {getDisplayName(friend) && (
-                                  <Typography variant="body2" color="text.secondary">
-                                    @{friend.username}
-                                  </Typography>
-                                )}
-                              </Box>
-                            }
-                            secondary={
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                                <Box
-                                  sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    bgcolor: getStatusColor(getLiveStatus(friend)),
-                                    mr: 1
-                                  }}
-                                />
-                                <Typography variant="body2" color="text.secondary">
-                                  {getStatusText(getLiveStatus(friend))}
-                                </Typography>
-                              </Box>
-                            }
-                            primaryTypographyProps={{
-                              component: 'div',
-                            }}
-                            secondaryTypographyProps={{
-                              component: 'div',
-                            }}
-                          />
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton
-                              onClick={() => handleStartDM(friend.id)}
-                              size="small"
-                              sx={{ color: 'text.secondary' }}
-                            >
-                              <MessageIcon />
-                            </IconButton>
-                            <IconButton
-                              onClick={(event) => handleFriendMenuOpen(event, friend)}
-                              size="small"
-                              sx={{ color: 'text.secondary' }}
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
-                          </Box>
-                        </ListItem>
+                        {renderFriendItem(friend)}
                       </Grow>
                     ))}
                   </List>

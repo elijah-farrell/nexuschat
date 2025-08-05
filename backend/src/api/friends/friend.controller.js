@@ -7,17 +7,17 @@ const getFriends = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const friends = query(`
+    const friendsResult = await query(`
       SELECT u.id, u.username, u.name, u.profile_picture, u.status, u.last_seen, f.created_at as friendship_date
       FROM friends f
       INNER JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)
-      WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?
+      WHERE (f.user_id = $1 OR f.friend_id = $2) AND u.id != $3
       ORDER BY u.status = 'online' DESC, u.name ASC
     `, [userId, userId, userId]);
 
     res.json({
       success: true,
-      friends
+      friends: friendsResult.rows
     });
   } catch (error) {
     console.error('Get friends error:', error);
@@ -30,17 +30,17 @@ const getOnlineFriends = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const friends = query(`
+    const friendsResult = await query(`
       SELECT u.id, u.username, u.name, u.profile_picture, u.status, u.last_seen, f.created_at as friendship_date
       FROM friends f
       INNER JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)
-      WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ? AND u.status = 'online'
+      WHERE (f.user_id = $1 OR f.friend_id = $2) AND u.id != $3 AND u.status = 'online'
       ORDER BY u.name ASC
     `, [userId, userId, userId]);
 
     res.json({
       success: true,
-      friends
+      friends: friendsResult.rows
     });
   } catch (error) {
     console.error('Get online friends error:', error);
@@ -55,18 +55,18 @@ const getFriendRequests = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const requests = query(`
+    const requestsResult = await query(`
       SELECT fr.id, fr.status, fr.created_at,
              u.id as sender_id, u.username, u.name, u.profile_picture
       FROM friend_requests fr
       INNER JOIN users u ON fr.sender_id = u.id
-      WHERE fr.recipient_id = ? AND fr.status = 'pending'
+      WHERE fr.recipient_id = $1 AND fr.status = 'pending'
       ORDER BY fr.created_at DESC
     `, [userId]);
 
     res.json({
       success: true,
-      requests
+      requests: requestsResult.rows
     });
   } catch (error) {
     console.error('Get friend requests error:', error);
@@ -79,18 +79,18 @@ const getSentFriendRequests = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const requests = query(`
+    const requestsResult = await query(`
       SELECT fr.id, fr.status, fr.created_at,
              u.id as recipient_id, u.username, u.name, u.profile_picture
       FROM friend_requests fr
       INNER JOIN users u ON fr.recipient_id = u.id
-      WHERE fr.sender_id = ? AND fr.status = 'pending'
+      WHERE fr.sender_id = $1 AND fr.status = 'pending'
       ORDER BY fr.created_at DESC
     `, [userId]);
 
     res.json({
       success: true,
-      requests
+      requests: requestsResult.rows
     });
   } catch (error) {
     console.error('Get sent friend requests error:', error);
@@ -110,16 +110,13 @@ const sendFriendRequest = async (req, res) => {
       targetUserId = recipientId;
     } else if (recipientUsername) {
       // Check if recipient exists
-      const recipients = query(
-        'SELECT id FROM users WHERE username = ?',
-        [recipientUsername]
-      );
+      const recipientsResult = await query('SELECT id FROM users WHERE username = $1', [recipientUsername]);
 
-      if (recipients.length === 0) {
+      if (recipientsResult.rows.length === 0) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      targetUserId = recipients[0].id;
+      targetUserId = recipientsResult.rows[0].id;
     } else {
       return res.status(400).json({ error: 'Recipient username or ID is required' });
     }
@@ -129,31 +126,28 @@ const sendFriendRequest = async (req, res) => {
     }
 
     // Check if they are already friends
-    const existingFriends = query(`
+    const existingFriendsResult = await query(`
       SELECT id FROM friends 
-      WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)
+      WHERE (user_id = $1 AND friend_id = $2) OR (user_id = $3 AND friend_id = $4)
     `, [senderId, targetUserId, targetUserId, senderId]);
 
-    if (existingFriends.length > 0) {
+    if (existingFriendsResult.rows.length > 0) {
       return res.status(400).json({ error: 'Already friends with this user' });
     }
 
     // Check for existing requests
-    const existingRequests = query(`
+    const existingRequestsResult = await query(`
       SELECT id, status FROM friend_requests 
-      WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+      WHERE (sender_id = $1 AND recipient_id = $2) OR (sender_id = $3 AND recipient_id = $4)
     `, [senderId, targetUserId, targetUserId, senderId]);
 
-    if (existingRequests.length > 0) {
-      const request = existingRequests[0];
+    if (existingRequestsResult.rows.length > 0) {
+      const request = existingRequestsResult.rows[0];
       if (request.status === 'pending') {
         return res.status(400).json({ error: 'Friend request already pending' });
       } else if (request.status === 'rejected') {
         // If previously rejected, update the existing request to pending and update created_at
-        query(
-          'UPDATE friend_requests SET status = ?, updated_at = CURRENT_TIMESTAMP, created_at = NOW() WHERE id = ?',
-          ['pending', request.id]
-        );
+        await query('UPDATE friend_requests SET status = $1, updated_at = CURRENT_TIMESTAMP, created_at = NOW() WHERE id = $2', ['pending', request.id]);
         // Emit real-time event to recipient (to all sockets)
         if (req.io && req.userSockets && req.userSockets.has(targetUserId)) {
           const userSocketSet = req.userSockets.get(targetUserId);
@@ -175,10 +169,7 @@ const sendFriendRequest = async (req, res) => {
 
     // Create new friend request
     try {
-      const result = query(
-        'INSERT INTO friend_requests (sender_id, recipient_id) VALUES (?, ?)',
-        [senderId, targetUserId]
-      );
+      const result = await query('INSERT INTO friend_requests (sender_id, recipient_id) VALUES ($1, $2) RETURNING id', [senderId, targetUserId]);
       // Emit real-time event to recipient (to all sockets)
       if (req.io && req.userSockets && req.userSockets.has(targetUserId)) {
         const userSocketSet = req.userSockets.get(targetUserId);
@@ -192,11 +183,11 @@ const sendFriendRequest = async (req, res) => {
       res.status(201).json({
         success: true,
         message: 'Friend request sent successfully',
-        requestId: result.insertId
+        requestId: result.rows[0].id
       });
     } catch (error) {
-      // Handle duplicate entry error
-      if (error.code === 'ER_DUP_ENTRY') {
+      // Handle duplicate entry error (PostgreSQL unique constraint violation)
+      if (error.code === '23505' && error.constraint === 'friend_requests_sender_id_recipient_id_key') {
         return res.status(400).json({ error: 'Friend request already pending' });
       }
       throw error;
@@ -214,28 +205,22 @@ const acceptFriendRequest = async (req, res) => {
     const { requestId } = req.params;
 
     // Get the friend request
-    const requests = query(`
+    const requestsResult = await query(`
       SELECT * FROM friend_requests 
-      WHERE id = ? AND recipient_id = ? AND status = 'pending'
+      WHERE id = $1 AND recipient_id = $2 AND status = 'pending'
     `, [requestId, userId]);
 
-    if (requests.length === 0) {
+    if (requestsResult.rows.length === 0) {
       return res.status(404).json({ error: 'Friend request not found' });
     }
 
-    const request = requests[0];
+    const request = requestsResult.rows[0];
 
     // Update request status to accepted
-    query(
-      'UPDATE friend_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      ['accepted', requestId]
-    );
+    await query('UPDATE friend_requests SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', ['accepted', requestId]);
 
     // Create friendship (add to friends table)
-    query(
-      'INSERT INTO friends (user_id, friend_id) VALUES (?, ?)',
-      [request.sender_id, request.recipient_id]
-    );
+    await query('INSERT INTO friends (user_id, friend_id) VALUES ($1, $2)', [request.sender_id, request.recipient_id]);
 
     // Emit real-time event to sender (to all sockets)
     if (req.io && req.userSockets && req.userSockets.has(request.sender_id)) {
@@ -262,21 +247,21 @@ const rejectFriendRequest = async (req, res) => {
     const { requestId } = req.params;
 
     // Update request status to rejected
-    const result = query(`
+    const result = await query(`
       UPDATE friend_requests 
-      SET status = ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ? AND recipient_id = ? AND status = 'pending'
+      SET status = $1, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = $2 AND recipient_id = $3 AND status = 'pending'
     `, ['rejected', requestId, userId]);
 
-    if (result.affectedRows === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Friend request not found' });
     }
 
     // Emit real-time event to sender (to all sockets)
     // Get sender_id for this request
-    const request = query('SELECT sender_id FROM friend_requests WHERE id = ?', [requestId]);
-    if (request.length > 0 && req.io && req.userSockets && req.userSockets.has(request[0].sender_id)) {
-      const userSocketSet = req.userSockets.get(request[0].sender_id);
+    const requestResult = await query('SELECT sender_id FROM friend_requests WHERE id = $1', [requestId]);
+    if (requestResult.rows.length > 0 && req.io && req.userSockets && req.userSockets.has(requestResult.rows[0].sender_id)) {
+      const userSocketSet = req.userSockets.get(requestResult.rows[0].sender_id);
       for (const socketId of userSocketSet) {
         req.io.to(socketId).emit('friend_request_rejected', { recipientId: userId });
       }
@@ -298,18 +283,18 @@ const cancelFriendRequest = async (req, res) => {
     const userId = req.user.id;
     const { requestId } = req.params;
     // Get recipient_id before deleting
-    const request = query('SELECT recipient_id FROM friend_requests WHERE id = ?', [requestId]);
+    const requestResult = await query('SELECT recipient_id FROM friend_requests WHERE id = $1', [requestId]);
     // Delete the friend request (only if user is the sender)
-    const result = query(`
+    const result = await query(`
       DELETE FROM friend_requests 
-      WHERE id = ? AND sender_id = ? AND status = 'pending'
+      WHERE id = $1 AND sender_id = $2 AND status = 'pending'
     `, [requestId, userId]);
-    if (result.affectedRows === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Friend request not found' });
     }
     // Emit real-time event to recipient (to all sockets)
-    if (request.length > 0 && req.io && req.userSockets && req.userSockets.has(request[0].recipient_id)) {
-      const userSocketSet = req.userSockets.get(request[0].recipient_id);
+    if (requestResult.rows.length > 0 && req.io && req.userSockets && req.userSockets.has(requestResult.rows[0].recipient_id)) {
+      const userSocketSet = req.userSockets.get(requestResult.rows[0].recipient_id);
       for (const socketId of userSocketSet) {
         req.io.to(socketId).emit('friend_request_cancelled', { senderId: userId });
       }
@@ -332,7 +317,7 @@ const removeFriend = async (req, res) => {
     // Remove friendship from both sides
     const result = query(`
       DELETE FROM friends 
-      WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)
+      WHERE (user_id = $1 AND friend_id = $2) OR (user_id = $3 AND friend_id = $4)
     `, [userId, friendId, friendId, userId]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Friendship not found' });
@@ -360,13 +345,15 @@ const searchUsers = async (req, res) => {
     const userId = req.user.id;
     const { query: searchQuery } = req.query;
 
+    console.log('Search query received:', searchQuery, 'Length:', searchQuery?.length);
+
     if (!searchQuery || searchQuery.trim().length < 2) {
       return res.status(400).json({ error: 'Search query must be at least 2 characters' });
     }
 
     const searchTerm = `%${searchQuery.trim()}%`;
 
-    const users = query(`
+    const usersResult = await query(`
       SELECT u.id, u.username, u.name, u.profile_picture, u.status,
              CASE 
                WHEN f.id IS NOT NULL THEN 'friend'
@@ -375,17 +362,17 @@ const searchUsers = async (req, res) => {
                ELSE 'none'
              END as relationship_status
       FROM users u
-      LEFT JOIN friends f ON (f.user_id = ? AND f.friend_id = u.id) OR (f.user_id = u.id AND f.friend_id = ?)
-      LEFT JOIN friend_requests fr_sent ON fr_sent.sender_id = ? AND fr_sent.recipient_id = u.id
-      LEFT JOIN friend_requests fr_received ON fr_received.sender_id = u.id AND fr_received.recipient_id = ?
-      WHERE u.id != ? AND (u.username LIKE ? OR u.name LIKE ?)
+      LEFT JOIN friends f ON (f.user_id = $1 AND f.friend_id = u.id) OR (f.user_id = u.id AND f.friend_id = $2)
+      LEFT JOIN friend_requests fr_sent ON fr_sent.sender_id = $3 AND fr_sent.recipient_id = u.id
+      LEFT JOIN friend_requests fr_received ON fr_received.sender_id = u.id AND fr_received.recipient_id = $4
+      WHERE u.id != $5 AND (u.username LIKE $6 OR u.name LIKE $7)
       ORDER BY u.name ASC
       LIMIT 20
     `, [userId, userId, userId, userId, userId, searchTerm, searchTerm]);
 
     res.json({
       success: true,
-      users
+      users: usersResult.rows
     });
   } catch (error) {
     console.error('Search users error:', error);
@@ -399,7 +386,7 @@ const getFriendActivity = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Get friend requests received (who added you)
-    const friendRequests = query(`
+    const friendRequestsResult = await query(`
       SELECT 
         fr.id,
         fr.status,
@@ -412,13 +399,13 @@ const getFriendActivity = async (req, res) => {
         u.status as user_status
       FROM friend_requests fr
       INNER JOIN users u ON fr.sender_id = u.id
-      WHERE fr.recipient_id = ?
+      WHERE fr.recipient_id = $1
       ORDER BY fr.created_at DESC
       LIMIT 20
     `, [currentUserId]);
 
     // Get friends list with join dates
-    const friends = query(`
+    const friendsResult = await query(`
       SELECT 
         f.id,
         f.created_at as friendship_date,
@@ -430,13 +417,13 @@ const getFriendActivity = async (req, res) => {
         u.last_seen
       FROM friends f
       INNER JOIN users u ON (f.user_id = u.id OR f.friend_id = u.id)
-      WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?
+      WHERE (f.user_id = $1 OR f.friend_id = $2) AND u.id != $3
       ORDER BY f.created_at DESC
       LIMIT 20
     `, [currentUserId, currentUserId, currentUserId]);
 
     // Get recent friend status changes (online/offline)
-    const statusActivity = query(`
+    const statusActivityResult = await query(`
       SELECT 
         u.id,
         u.username,
@@ -446,17 +433,17 @@ const getFriendActivity = async (req, res) => {
         u.last_seen
       FROM friends f
       INNER JOIN users u ON (f.user_id = u.id OR f.friend_id = u.id)
-      WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?
-      AND u.last_seen > datetime('now', '-7 days')
+      WHERE (f.user_id = $1 OR f.friend_id = $2) AND u.id != $3
+      AND u.last_seen > NOW() - INTERVAL '7 days'
       ORDER BY u.last_seen DESC
       LIMIT 10
     `, [currentUserId, currentUserId, currentUserId]);
 
     res.json({
       success: true,
-      friendRequests,
-      friends,
-      statusActivity
+      friendRequests: friendRequestsResult.rows,
+      friends: friendsResult.rows,
+      statusActivity: statusActivityResult.rows
     });
   } catch (error) {
     console.error('Get friend activity error:', error);
@@ -468,14 +455,11 @@ const getFriendActivity = async (req, res) => {
 const getFriendsOfUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const friends = query(
-      `SELECT u.id, u.username, u.name, u.profile_picture, u.status, u.last_seen, f.created_at as friendship_date
+    const friends = query(`SELECT u.id, u.username, u.name, u.profile_picture, u.status, u.last_seen, f.created_at as friendship_date
        FROM friends f
        INNER JOIN users u ON (f.friend_id = u.id OR f.user_id = u.id)
-       WHERE (f.user_id = ? OR f.friend_id = ?) AND u.id != ?
-       ORDER BY u.status = 'online' DESC, u.name ASC`,
-      [userId, userId, userId]
-    );
+       WHERE (f.user_id = $1 OR f.friend_id = $2) AND u.id != $3
+       ORDER BY u.status = 'online' DESC, u.name ASC`, [userId, userId, userId]);
     res.json({ success: true, friends });
   } catch (error) {
     console.error('Get friends of user error:', error);

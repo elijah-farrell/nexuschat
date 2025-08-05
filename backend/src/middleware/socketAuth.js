@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { queryOne } = require('../config/database');
 
-const socketAuth = (socket, next) => {
+const socketAuth = async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
     
@@ -12,8 +12,8 @@ const socketAuth = (socket, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database to ensure they still exist
-    const user = queryOne(
-      'SELECT id, username FROM users WHERE id = ?',
+    const user = await queryOne(
+      'SELECT id, username FROM users WHERE id = $1',
       [decoded.userId]
     );
 

@@ -529,9 +529,13 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                     <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary' }}>{dmActivity?.unreadSummary?.total_unread || 0}</Typography>
                     <Typography color="text.secondary">Unread Messages</Typography>
                   </Box>
-                  <Badge badgeContent={dmActivity?.unreadSummary?.conversations_with_unread || 0} color="primary">
+                  {dmActivity?.unreadSummary?.conversations_with_unread > 0 ? (
+                    <Badge badgeContent={dmActivity?.unreadSummary?.conversations_with_unread} color="primary">
+                      <Avatar sx={{ bgcolor: '#f57c00' }}><MessageIcon /></Avatar>
+                    </Badge>
+                  ) : (
                     <Avatar sx={{ bgcolor: '#f57c00' }}><MessageIcon /></Avatar>
-                  </Badge>
+                  )}
                 </Box>
               </CardContent>
             </Card>
@@ -581,7 +585,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                 }}
                 action={tabsRef}
               >
-                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><PersonAddIcon />Friends{friendActivity?.friendRequests?.filter(r => r.status === 'pending').length > 0 && (<Chip label={friendActivity?.friendRequests?.filter(r => r.status === 'pending').length} size="small" color="error" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
+                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><PersonAddIcon />Friends</Box>} />
                 <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><GroupIcon />Servers</Box>} />
                 <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><MessageIcon />Messages{dmActivity?.unreadSummary?.total_unread > 0 && (<Chip label={dmActivity?.unreadSummary?.total_unread} size="small" color="primary" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
               </Tabs>
@@ -674,13 +678,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                         // Check if user has any friends at all (not just recent ones)
                         const hasAnyFriendsAtAll = friendActivity?.friends?.length > 0 || false;
                         
-                        if (!hasAnyFriendsAtAll) {
-                          return (
-                            <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
-                              You don't have any friends yet. Add friends to start chatting!
-                            </Typography>
-                          );
-                        } else if (!hasBestFriends && !hasRecentlyOnline && !hasRecentlyAdded) {
+                        if (!hasBestFriends && !hasRecentlyOnline && !hasRecentlyAdded) {
                           return (
                             <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
                               Seems a bit quiet around here. Add friends to start chatting!

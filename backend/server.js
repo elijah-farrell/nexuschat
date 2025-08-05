@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const validateEnv = require('./src/config/validateEnv');
 const socketAuth = require('./src/middleware/socketAuth');
-const { pool, query } = require('./src/config/database');
+const { pool, query, initializeDatabase } = require('./src/config/database');
 const auth = require('./src/middleware/auth'); // <-- moved up here
 const logger = require('./src/utils/logger'); // Added for detailed logging
 
@@ -91,7 +91,8 @@ const generalLimiter = rateLimit({
   }
 });
 
-app.use('/api/auth', authLimiter);
+// Apply rate limiting more specifically
+app.use('/api/auth/login', authLimiter); // Only apply to login endpoint
 app.use('/api', generalLimiter);
 
 const io = new Server(server, {
@@ -108,7 +109,7 @@ io.use(socketAuth);
 // Store user socket connections - support multiple sessions per user
 const userSockets = new Map(); // userId -> Set of socket IDs
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   // Join user's personal room
   socket.join(`user_${socket.userId}`);
   
@@ -120,11 +121,11 @@ io.on('connection', (socket) => {
 
   // Update user status to online (only if this is the first session)
   if (userSockets.get(socket.userId).size === 1) {
-    try {
-      query(
-        'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
-        ['online', socket.userId]
-      );
+            try {
+          await query(
+            'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
+            ['online', socket.userId]
+          );
       // Emit user online event to all clients
       io.emit('user_online', { userId: socket.userId });
       // Emit user_status_update event to all clients
@@ -176,7 +177,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', (_reason) => {
+  socket.on('disconnect', async (_reason) => {
     // Remove this specific socket from user's session set
     if (userSockets.has(socket.userId)) {
       const userSessionSet = userSockets.get(socket.userId);
@@ -189,8 +190,8 @@ io.on('connection', (socket) => {
         
         // Mark user offline immediately since no sessions remain
         try {
-          query(
-            'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+          await query(
+            'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
             ['offline', socket.userId]
           );
           // Emit user offline event to all clients
@@ -286,12 +287,20 @@ if (!PORT) {
   process.exit(1);
 }
 
-// Start server (SQLite is file-based, so no connection test needed)
-server.listen(PORT, () => {
-  console.log(`\n✅ NexusChat server running!`);
-  console.log(`   🚀 Port: ${PORT}`);
-  console.log(`   🌐 API: Ready`);
-  console.log(`   🩺 Health: Ready`);
-  console.log(`   🔌 WebSocket: Ready`);
-  console.log(`   🗄️ Database: SQLite (Connected)\n`);
-});
+// Initialize database and start server
+const startServer = async () => {
+  try {
+    // Initialize database
+    await initializeDatabase();
+    
+    // Start server
+    server.listen(PORT, () => {
+      console.log(`✅ Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

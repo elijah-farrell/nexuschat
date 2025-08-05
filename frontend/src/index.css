@@ -110,6 +110,12 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+/* Edge browser password field fixes */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
+
 /* Mobile-specific styles */
 @media (max-width: 600px) {
   /* Hide scrollbar on mobile for cleaner look */

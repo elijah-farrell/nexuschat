@@ -2,7 +2,8 @@ const validateEnv = () => {
   const required = [
     'JWT_SECRET',
     'PORT',
-    'FRONTEND_URL'
+    'FRONTEND_URL',
+    'DATABASE_URL'
   ];
 
   const missing = required.filter(key => !process.env[key]);
@@ -15,6 +16,8 @@ const validateEnv = () => {
     console.error('\nPlease check your .env file and ensure all required variables are set.');
     process.exit(1);
   }
+
+
 
   // Validate JWT secret length
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
@@ -36,7 +39,14 @@ const validateEnv = () => {
     process.exit(1);
   }
 
-  //console.log('✅ Environment variables validated successfully');
+
+
+  // Show minimal environment info for development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🚀 Starting on port ${process.env.PORT}`);
+  }
+
+  // Environment validation passed silently
 };
 
 module.exports = validateEnv; 

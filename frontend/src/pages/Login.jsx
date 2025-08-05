@@ -353,6 +353,7 @@ const Login = ({ mode, setMode }) => {
                 error={!!errors.password}
                 helperText={errors.password}
                 sx={{
+                  mb: 3, // Add bottom margin for spacing
                   '& .MuiInputLabel-root': {
                     color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
                     '&.Mui-focused': {

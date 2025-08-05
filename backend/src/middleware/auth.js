@@ -14,8 +14,8 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database to ensure they still exist
-    const user = queryOne(
-      'SELECT id, username, name, email, bio, profile_picture, status FROM users WHERE id = ?',
+    const user = await queryOne(
+      'SELECT id, username, name, email, bio, profile_picture, status FROM users WHERE id = $1',
       [decoded.userId]
     );
 

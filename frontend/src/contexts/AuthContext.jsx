@@ -1,25 +1,64 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 
 const AuthContext = createContext();
+
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
+  
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [isReady, setIsReady] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [skipValidation, setSkipValidation] = useState(false);
+  const [shouldNavigateAfterRegister, setShouldNavigateAfterRegister] = useState(false);
   const { isConnected, isConnectingState } = useSocket();
 
   useEffect(() => {
+    // Prevent infinite loops by checking if we're already initializing
+    if (isInitializing) return;
+    
+    // Skip validation if we just registered
+    if (skipValidation) {
+      console.log('🔍 AUTH: Skipping validation for newly registered user');
+      console.log('🔍 AUTH: Current user state:', user);
+      console.log('🔍 AUTH: Current token state:', token);
+      
+      setSkipValidation(false);
+      setLoading(false);
+      setIsReady(true);
+      setIsInitializing(false);
+      
+      // Ensure user is set from localStorage if available
+      const storedUser = localStorage.getItem('user');
+      console.log('🔍 AUTH: Stored user from localStorage:', storedUser);
+      
+      if (storedUser && !user) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          console.log('🔍 AUTH: Setting user from localStorage:', parsedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Error parsing stored user:', error);
+        }
+      }
+      return;
+    }
+    
+    setIsInitializing(true);
     setIsReady(false); // Reset ready state when token changes
+    
     const initializeAuth = async () => {
       if (token) {
         try {
@@ -38,21 +77,39 @@ export const AuthProvider = ({ children }) => {
             };
             setUser(userWithStatus);
           } else {
+            // Clear invalid token
             localStorage.removeItem('token');
             setToken(null);
+            setUser(null);
           }
         } catch (error) {
           // Silently handle auth initialization errors
           localStorage.removeItem('token');
           setToken(null);
+          setUser(null);
         }
+      } else {
+        // No token, ensure user is null
+        setUser(null);
       }
       setLoading(false);
       setIsReady(true);
+      setIsInitializing(false);
     };
 
     initializeAuth();
-  }, [token]);
+  }, [token, skipValidation]); // Remove isInitializing from dependencies to prevent infinite loop
+
+  // Handle navigation after successful registration
+  useEffect(() => {
+    if (shouldNavigateAfterRegister && user && isReady) {
+      setShouldNavigateAfterRegister(false);
+      // Use window.location to navigate after state is confirmed
+      window.location.href = '/';
+    }
+  }, [shouldNavigateAfterRegister, user, isReady]);
+
+
 
   // Enhanced loading state that includes socket connection
   const isFullyReady = isReady && (!user || (user && (isConnected || isConnectingState === false)));
@@ -154,7 +211,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, user]);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     if (!token) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/profile`, {
@@ -175,17 +232,17 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       // handle refresh user errors
     }
-  };
+  }, [token]);
 
-  const clearUIState = () => {
+  const clearUIState = useCallback(() => {
     localStorage.removeItem('nexuschat-active-section');
     localStorage.removeItem('nexuschat-selected-channel');
     localStorage.removeItem('nexuschat-selected-dm');
     localStorage.removeItem('nexuschat-selected-server');
     localStorage.removeItem('nexuschat-friends-active-tab');
-  };
+  }, []);
 
-  const login = async (username, password) => {
+  const login = useCallback(async (username, password) => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       if (!backendUrl) {
@@ -215,10 +272,12 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return { success: false, error: 'Network error. Please check your connection.' };
     }
-  };
+  }, []);
 
-  const register = async (username, password, name = null) => {
+  const register = useCallback(async (username, password, name = null) => {
     try {
+      console.log('🔍 REGISTER: Starting registration for:', username);
+      
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       if (!backendUrl) {
         return { success: false, error: 'VITE_BACKEND_URL environment variable is not set' };
@@ -232,24 +291,44 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password, name }),
       });
 
+      console.log('🔍 REGISTER: Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('🔍 REGISTER: Failed with error:', errorData);
         return { success: false, error: errorData.error || 'Registration failed' };
       }
 
       const data = await response.json();
+      console.log('🔍 REGISTER: Success! Token:', data.token ? 'exists' : 'missing', 'User:', data.user);
       
+      // Set token first, then user to ensure proper initialization
+      console.log('🔍 REGISTER: Setting token to:', data.token);
       setToken(data.token);
+      console.log('🔍 REGISTER: Setting user to:', data.user);
       setUser(data.user);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Force ready state to true after successful registration
+      setLoading(false);
+      setIsReady(true);
+      
+      // Skip validation for newly registered users
+      setSkipValidation(true);
+      
+      // Signal that navigation should happen after state is set
+      setShouldNavigateAfterRegister(true);
+      
+      console.log('🔍 REGISTER: AuthContext updated, returning success');
       return { success: true };
     } catch (error) {
+      console.log('🔍 REGISTER: Network error:', error);
       return { success: false, error: 'Network error. Please check your connection.' };
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       // Call backend logout endpoint to update status
       if (token) {
@@ -274,9 +353,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('nexuschat-selected-server');
       localStorage.removeItem('nexuschat-friends-active-tab');
     }
-  };
+  }, [token]);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     token,
     loading,
@@ -286,7 +365,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     refreshUser,
-  };
+  }), [user, token, loading, isReady, isFullyReady]);
 
   return (
     <AuthContext.Provider value={value}>

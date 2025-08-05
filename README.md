@@ -1,175 +1,60 @@
-# NexusChat
+# NexusChat 🚀
 
-A real-time messaging application built with React, Node.js, and Socket.IO - inspired by Discord.
+A modern, real-time chat application built with React, Node.js, and PostgreSQL. Connect with friends, join servers, and chat seamlessly with real-time messaging powered by Socket.IO.
 
-## 🚀 Current Status
+## ✨ Features
 
-**Backend**: ✅ Deployed to Render (SQLite database)
-**Frontend**: 🔄 In progress - deploying to Vercel
-**Database**: ✅ SQLite (file-based, no external dependencies)
-**Real-time Chat**: ✅ Working with Socket.IO
+- **Real-time Messaging** - Instant message delivery with Socket.IO
+- **Direct Messages** - Private conversations with friends
+- **Friend System** - Add, accept, and manage friend requests
+- **User Profiles** - Customizable profiles with status updates
+- **Modern UI** - Clean, responsive design with dark/light themes
+- **Real-time Status** - See when friends are online/offline
+- **Search & Discovery** - Find and connect with new users
+- **Secure Authentication** - JWT-based authentication system
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React** with Vite
-- **Material-UI** for components
-- **Socket.IO Client** for real-time communication
-- **React Router** for navigation
+- **React 18** - Modern UI framework
+- **Vite** - Fast build tool and dev server
+- **Material-UI (MUI)** - Component library
+- **Socket.IO Client** - Real-time communication
+- **React Router** - Client-side routing
 
 ### Backend
-- **Node.js** with Express
-- **Socket.IO** for real-time messaging
-- **SQLite** database (file-based, no external dependencies)
-- **JWT** for authentication
-- **Bcrypt** for password hashing
-- **Winston** for logging
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web framework
+- **Socket.IO** - Real-time bidirectional communication
+- **PostgreSQL** - Reliable database
+- **JWT** - Authentication tokens
+- **Bcrypt** - Password hashing
 
-### Security Features
-- Account lockout protection (5 failed attempts = 15min lock)
-- Input sanitization to prevent SQL injection
-- Rate limiting (5 login attempts per 15min)
-- JWT token authentication
-- Password hashing with bcrypt
+## 📱 Screenshots
 
-## 🏗️ Architecture
-
-### Core Features
-- **Real-time messaging** with Socket.IO
-- **User authentication** with JWT tokens
-- **Friend system** with requests and management
-- **Direct messaging** (1-on-1 and group DMs)
-- **User profiles** with status indicators
-- **Real-time status updates** (online/offline)
-
-### Database Schema
-- **Users**: Authentication, profiles, status
-- **DM Conversations**: 1-on-1 and group chats
-- **DM Messages**: Message content and metadata
-- **Friends**: Mutual friendship relationships
-- **Friend Requests**: Pending friend requests
-
-## 🚀 Deployment
-
-### Render Deployment (Current)
-- **Backend**: Node.js service on Render with SQLite
-- **Database**: SQLite file-based database (no external dependencies)
-- **Frontend**: Static site on Vercel (in progress)
-
-### Environment Variables
-Backend requires:
-```
-JWT_SECRET=your_secure_jwt_secret
-PORT=3000
-NODE_ENV=production
-FRONTEND_URL=https://your-frontend-domain.vercel.app
-LOG_LEVEL=info
-```
-
-Frontend requires:
-```
-VITE_BACKEND_URL=https://your-backend-domain.onrender.com
-```
-
-## 📁 Project Structure
-
-```
-nexuschat/
-├── backend/                 # Node.js API server
-│   ├── src/
-│   │   ├── api/            # Route handlers
-│   │   ├── config/         # Database, auth config
-│   │   ├── middleware/     # Auth middleware
-│   │   └── utils/          # Utilities
-│   └── server.js           # Main server file
-├── frontend/               # React application
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── contexts/       # React contexts
-│   │   ├── pages/          # Page components
-│   │   └── utils/          # Utilities
-│   └── package.json
-├── database/               # Database schemas
-│   ├── schema-postgres.sql # Current PostgreSQL schema
-│   └── schema-mysql-deprecated.sql # Old MySQL schema
-└── README.md
-```
-
-## 🔧 Development
-
-### Prerequisites
-- Node.js 16+
-- PostgreSQL (for local development)
-- npm or yarn
-
-### Local Setup
-1. **Clone repository**
-   ```bash
-   git clone https://github.com/elijah-farrell/nexuschat.git
-   cd nexuschat
-   ```
-
-2. **Backend setup**
-   ```bash
-   cd backend
-   npm install
-   cp .env.example .env
-   # Update .env with your database details
-   npm run dev
-   ```
-
-3. **Frontend setup**
-   ```bash
-   cd frontend
-   npm install
-   cp .env.example .env
-   # Update .env with backend URL
-   npm run dev
-   ```
-
-4. **Database setup**
-   ```bash
-   # SQLite database is created automatically on first run
-   # No additional setup required
-   ```
-
-## 🎯 Features
-
-### Authentication
-- User registration and login
-- JWT token-based authentication
-- Account lockout protection
-- Secure password hashing
-
-### Messaging
-- Real-time direct messaging
-- Group DM support
-- Message read status
-- Typing indicators
-
-### User Management
-- Friend requests and management
-- User profiles with status
-- Real-time status updates
-- Profile picture uploads
-
-### Security
-- Input sanitization
-- Rate limiting
-- CORS protection
-- SQL injection prevention
-
-## 📝 License
-
-MIT License - see LICENSE file for details.
+*[Add screenshots of your app here]*
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📞 Support
+## 📄 License
 
-For issues or questions, please open an issue on GitHub.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Socket.IO for real-time capabilities
+- Material-UI for beautiful components
+- PostgreSQL for reliable data storage
+- The open-source community for inspiration
+
+---
+
+**Made with ❤️ by [Your Name]**
+
+For setup and installation instructions, see [SETUP.md](SETUP.md).

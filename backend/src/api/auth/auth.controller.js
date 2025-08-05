@@ -85,8 +85,8 @@ const register = async (req, res) => {
 
     // Check if username already exists (case-insensitive)
     logger.info(`[REGISTER] Checking if username exists: ${sanitizedUsername}`);
-    const existingUser = queryOne(
-      'SELECT id FROM users WHERE LOWER(username) = ?',
+    const existingUser = await queryOne(
+      'SELECT id FROM users WHERE LOWER(username) = $1',
       [sanitizedUsername.toLowerCase()]
     );
 
@@ -100,16 +100,17 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(sanitizedPassword, 10);
 
     // Create user (do not set name on registration)
-    const result = query(
-      'INSERT INTO users (username, password) VALUES (?, ?)',
+    const result = await query(
+      'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id',
       [sanitizedUsername, hashedPassword]
     );
 
-    logger.info(`[REGISTER] User created successfully with ID: ${result.lastInsertRowid}`);
+    const userId = result.rows[0].id;
+    logger.info(`[REGISTER] User created successfully with ID: ${userId}`);
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: result.lastInsertRowid, username: sanitizedUsername },
+      { userId: userId, username: sanitizedUsername },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -120,7 +121,7 @@ const register = async (req, res) => {
       message: 'User registered successfully',
       token,
       user: {
-        id: result.lastInsertRowid,
+        id: userId,
         username: sanitizedUsername,
         email: null,
         bio: null,
@@ -167,8 +168,8 @@ const login = async (req, res) => {
 
     // Find user
     logger.info(`[LOGIN] Looking up user: ${sanitizedUsername}`);
-    const user = queryOne(
-      'SELECT * FROM users WHERE username = ?',
+    const user = await queryOne(
+      'SELECT * FROM users WHERE username = $1',
       [sanitizedUsername]
     );
 
@@ -180,6 +181,10 @@ const login = async (req, res) => {
 
     logger.info(`[LOGIN] User found, checking password for: ${sanitizedUsername}`);
     // Check password
+    if (!user.password) {
+      logger.error(`[LOGIN] User has no password hash: ${sanitizedUsername}`);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
     const isValidPassword = await bcrypt.compare(sanitizedPassword, user.password);
     if (!isValidPassword) {
       logger.warn(`[LOGIN] Invalid password for: ${sanitizedUsername}`);
@@ -192,8 +197,8 @@ const login = async (req, res) => {
     clearFailedAttempts(sanitizedUsername);
 
     // Update user status to online
-    query(
-      'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+    await query(
+      'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
       ['online', user.id]
     );
 
@@ -230,10 +235,11 @@ const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const user = queryOne(
-      'SELECT id, username, name, email, bio, profile_picture, banner_color, status, last_seen, created_at FROM users WHERE id = ?',
+    const result = await query(
+      'SELECT id, username, name, email, bio, profile_picture, banner_color, status, last_seen, created_at FROM users WHERE id = $1',
       [userId]
     );
+    const user = result.rows[0];
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -255,6 +261,7 @@ const updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { name, email, bio, profile_picture, banner_color } = req.body;
 
+    let paramIndex = 1;
     const updateFields = [];
     const updateValues = [];
 
@@ -263,12 +270,12 @@ const updateProfile = async (req, res) => {
       if (name && (name.length < 1 || name.length > 50)) {
         return res.status(400).json({ error: 'Name must be between 1 and 50 characters' });
       }
-      updateFields.push('name = ?');
+      updateFields.push(`name = $${paramIndex++}`);
       updateValues.push(name);
     }
 
     if (email !== undefined) {
-      updateFields.push('email = ?');
+      updateFields.push(`email = $${paramIndex++}`);
       updateValues.push(email);
     }
 
@@ -277,17 +284,17 @@ const updateProfile = async (req, res) => {
       if (bio && (bio.length < 1 || bio.length > 500)) {
         return res.status(400).json({ error: 'Bio must be between 1 and 500 characters' });
       }
-      updateFields.push('bio = ?');
+      updateFields.push(`bio = $${paramIndex++}`);
       updateValues.push(bio);
     }
 
     if (profile_picture !== undefined) {
-      updateFields.push('profile_picture = ?');
+      updateFields.push(`profile_picture = $${paramIndex++}`);
       updateValues.push(profile_picture);
     }
 
     if (banner_color !== undefined) {
-      updateFields.push('banner_color = ?');
+      updateFields.push(`banner_color = $${paramIndex++}`);
       updateValues.push(banner_color);
     }
 
@@ -298,7 +305,7 @@ const updateProfile = async (req, res) => {
     updateValues.push(userId);
 
     await query(
-      `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${paramIndex}`,
       updateValues
     );
 
@@ -324,7 +331,7 @@ const uploadProfilePicture = async (req, res) => {
 
     // Update user's profile picture in database
     await query(
-      'UPDATE users SET profile_picture = ? WHERE id = ?',
+      'UPDATE users SET profile_picture = $1 WHERE id = $2',
       [profilePictureUrl, userId]
     );
 
@@ -353,7 +360,7 @@ const updateStatus = async (req, res) => {
 
     // Update user status and last_seen
     await query(
-      'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
       [status, userId]
     );
 
@@ -384,7 +391,7 @@ const logout = async (req, res) => {
     if (!hasOtherSessions) {
       // Only update status to offline if no other sessions exist
       await query(
-        'UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+        'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
         ['offline', userId]
       );
 
@@ -411,25 +418,25 @@ const getUserProfile = async (req, res) => {
     const currentUserId = req.user.id;
 
     // Get user profile (excluding sensitive info like password and email)
-    const users = query(
-      'SELECT id, username, name, bio, profile_picture, banner_color, status, last_seen, created_at FROM users WHERE id = ?',
+    const users = await query(
+      'SELECT id, username, name, bio, profile_picture, banner_color, status, last_seen, created_at FROM users WHERE id = $1',
       [userId]
     );
 
-    if (users.length === 0) {
+    if (users.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const user = users[0];
+    const user = users.rows[0];
 
     // Check if current user and viewed user are friends
-    const friendRows = query(
-      `SELECT created_at FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)`,
+    const friendRows = await query(
+      `SELECT created_at FROM friends WHERE (user_id = $1 AND friend_id = $2) OR (user_id = $3 AND friend_id = $4)`,
       [currentUserId, userId, userId, currentUserId]
     );
-    if (friendRows.length > 0) {
+    if (friendRows.rows.length > 0) {
       user.is_friend = true;
-      user.friendship_date = friendRows[0].created_at;
+      user.friendship_date = friendRows.rows[0].created_at;
     } else {
       user.is_friend = false;
       user.friendship_date = null;
@@ -450,8 +457,8 @@ const checkUsername = async (req, res) => {
   if (!username) {
     return res.status(400).json({ error: 'Username is required' });
   }
-  const existingUser = queryOne(
-    'SELECT id FROM users WHERE LOWER(username) = ?',
+  const existingUser = await queryOne(
+    'SELECT id FROM users WHERE LOWER(username) = $1',
     [username.toLowerCase()]
   );
   if (existingUser) {
@@ -481,8 +488,8 @@ const updateUsername = async (req, res) => {
     }
 
     // Check if username already exists (case-insensitive, but allow same user to keep their username)
-    const existingUser = queryOne(
-      'SELECT id FROM users WHERE LOWER(username) = ? AND id != ?',
+    const existingUser = await queryOne(
+      'SELECT id FROM users WHERE LOWER(username) = $1 AND id != $2',
       [username.toLowerCase(), userId]
     );
 
@@ -491,8 +498,8 @@ const updateUsername = async (req, res) => {
     }
 
     // Update username
-    query(
-      'UPDATE users SET username = ? WHERE id = ?',
+    await query(
+      'UPDATE users SET username = $1 WHERE id = $2',
       [username, userId]
     );
 
@@ -519,8 +526,8 @@ const deleteAccount = async (req, res) => {
     }
 
     // Get current user's username
-    const user = queryOne(
-      'SELECT username FROM users WHERE id = ?',
+    const user = await queryOne(
+      'SELECT username FROM users WHERE id = $1',
       [userId]
     );
 
@@ -536,7 +543,7 @@ const deleteAccount = async (req, res) => {
     }
 
     // Delete user (cascade will handle related data)
-    query('DELETE FROM users WHERE id = ?', [userId]);
+    await query('DELETE FROM users WHERE id = $1', [userId]);
 
     res.json({
       success: true,
@@ -554,38 +561,38 @@ const getUserStats = async (req, res) => {
     const userId = req.user.id;
 
     // Get message count
-    const messageCount = query(
-      'SELECT COUNT(*) as count FROM dm_messages WHERE sender_id = ?',
+    const messageCount = await query(
+      'SELECT COUNT(*) as count FROM dm_messages WHERE sender_id = $1',
       [userId]
     );
 
     // Get friend count
-    const friendCount = query(
-      'SELECT COUNT(*) as count FROM friends WHERE user_id = ?',
+    const friendCount = await query(
+      'SELECT COUNT(*) as count FROM friends WHERE user_id = $1',
       [userId]
     );
 
     // Get DM conversation count
-    const dmCount = query(
-      'SELECT COUNT(*) as count FROM dm_members WHERE user_id = ?',
+    const dmCount = await query(
+      'SELECT COUNT(*) as count FROM dm_members WHERE user_id = $1',
       [userId]
     );
 
     // Get account age
-    const userData = query(
-      'SELECT created_at FROM users WHERE id = ?',
+    const userData = await query(
+      'SELECT created_at FROM users WHERE id = $1',
       [userId]
     );
 
-    const accountAge = userData.length > 0 ? 
-      Math.floor((Date.now() - new Date(userData[0].created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const accountAge = userData.rows.length > 0 ? 
+      Math.floor((Date.now() - new Date(userData.rows[0].created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
     res.json({
       success: true,
       stats: {
-        messages: messageCount[0]?.count || 0,
-        friends: friendCount[0]?.count || 0,
-        conversations: dmCount[0]?.count || 0,
+        messages: messageCount.rows[0]?.count || 0,
+        friends: friendCount.rows[0]?.count || 0,
+        conversations: dmCount.rows[0]?.count || 0,
         accountAge: accountAge
       }
     });

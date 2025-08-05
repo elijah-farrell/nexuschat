@@ -7,6 +7,7 @@ import Friends from '../../pages/Friends';
 import Home from '../../pages/Home';
 import Chat from '../../pages/Chat';
 import Settings from '../../pages/Settings';
+import Servers from '../../pages/Servers';
 import UserProfile from '../user/UserProfile';
 import ViewProfile from '../user/ViewProfile';
 import { useSocket } from '../../contexts/SocketContext';
@@ -217,6 +218,8 @@ const AppLayout = ({ mode, setMode }) => {
             setMode={setMode}
           />
         );
+      case 'servers':
+        return <Servers />;
       case 'settings':
         return <Settings mode={mode} setMode={setMode} />;
       case 'directs':

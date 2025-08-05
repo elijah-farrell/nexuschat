@@ -82,6 +82,14 @@ const ServerSidebar = ({
       notificationType: 'friendRequests'
     },
     {
+      id: 'servers',
+      label: 'Servers',
+      icon: <SettingsIcon />,
+      type: 'servers',
+      color: '#9B59B6',
+      notificationType: null
+    },
+    {
       id: 'directs',
       label: 'Direct Messages',
       icon: <MessageIcon />,
@@ -240,7 +248,7 @@ const ServerSidebar = ({
       {/* Create Server Button */}
       <Tooltip title="Create Server" placement="right">
         <IconButton
-          onClick={() => alert('Server creation coming soon!')}
+          onClick={() => onSectionChange('servers')}
           sx={{
             width: 48,
             height: 48,

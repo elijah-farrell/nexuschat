@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const validateEnv = require('./src/config/validateEnv');
 const socketAuth = require('./src/middleware/socketAuth');
-const { pool, query, initializeDatabase } = require('./src/config/database');
+const { pool, query } = require('./src/config/database');
 const auth = require('./src/middleware/auth'); // <-- moved up here
 const logger = require('./src/utils/logger'); // Added for detailed logging
 
@@ -295,16 +295,7 @@ const startServer = async () => {
     console.log(`🌐 Port: ${PORT}`);
     console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'not set'}`);
     
-    // Initialize database (but don't crash if it fails)
-    try {
-      console.log('🗄️ Initializing database connection...');
-      await initializeDatabase();
-      console.log('✅ Database connection successful');
-    } catch (dbError) {
-      console.error('⚠️ Database connection failed, but continuing...');
-      console.error('   This means some features may not work properly');
-      console.error('   Error:', dbError.message);
-    }
+
     
     // Start server
     server.listen(PORT, () => {

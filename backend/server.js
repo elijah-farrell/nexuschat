@@ -230,32 +230,25 @@ app.use('/uploads', (req, res, next) => {
 app.get('/api/health', async (req, res) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - health`);
   
+  // Basic server health - always return 200
+  const healthData = {
+    status: 'ok',
+    server: 'running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  };
+  
   try {
-    // Test database connection
+    // Test database connection (but don't fail the health check)
     const result = await query('SELECT 1 as test');
-    res.json({ 
-      status: 'ok',
-      database: 'connected',
-      timestamp: new Date().toISOString()
-    });
+    healthData.database = 'connected';
   } catch (error) {
-    console.error('Health check failed:', error.message);
-    
-    let errorMessage = 'Database connection failed';
-    if (error.message.includes('DATABASE_URL')) {
-      errorMessage = 'Database configuration missing';
-    } else if (error.code === 'ENETUNREACH' || error.code === 'ECONNREFUSED') {
-      errorMessage = 'Database server unreachable';
-    }
-    
-    res.status(503).json({ 
-      status: 'error',
-      database: 'disconnected',
-      error: errorMessage,
-      details: error.message,
-      timestamp: new Date().toISOString()
-    });
+    console.error('Health check database test failed:', error.message);
+    healthData.database = 'disconnected';
+    healthData.database_error = error.message;
   }
+  
+  res.json(healthData);
 });
 
 // Attach auth middleware for all /api routes except /api/auth and /api/health

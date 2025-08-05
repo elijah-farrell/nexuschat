@@ -9,6 +9,10 @@ const getPool = () => {
       throw new Error('DATABASE_URL environment variable is required');
     }
     
+    console.log('🔗 Creating database pool...');
+    console.log(`   Environment: ${process.env.NODE_ENV}`);
+    console.log(`   SSL: ${process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled'}`);
+    
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -31,11 +35,19 @@ const getPool = () => {
 
 // Simple query helper
 const query = async (sql, params = []) => {
-  const client = await getPool().connect();
   try {
-    return await client.query(sql, params);
-  } finally {
-    client.release();
+    const client = await getPool().connect();
+    try {
+      return await client.query(sql, params);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('❌ Database query failed:');
+    console.error(`   SQL: ${sql}`);
+    console.error(`   Error: ${error.message}`);
+    console.error(`   Code: ${error.code}`);
+    throw error;
   }
 };
 

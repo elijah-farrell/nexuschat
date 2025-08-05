@@ -1,26 +1,37 @@
 const { Pool } = require('pg');
 
-// Simple database pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
+// Lazy database pool creation
+let pool = null;
 
-// Test connection on startup
-pool.on('connect', () => {
-  console.log('✅ Database connected');
-});
+const getPool = () => {
+  if (!pool) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
+    
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
 
-pool.on('error', (err) => {
-  console.error('❌ Database error:', err.message);
-});
+    // Test connection on startup
+    pool.on('connect', () => {
+      console.log('✅ Database connected');
+    });
+
+    pool.on('error', (err) => {
+      console.error('❌ Database error:', err.message);
+    });
+  }
+  return pool;
+};
 
 // Simple query helper
 const query = async (sql, params = []) => {
-  const client = await pool.connect();
+  const client = await getPool().connect();
   try {
     return await client.query(sql, params);
   } finally {
@@ -35,7 +46,7 @@ const queryOne = async (sql, params = []) => {
 };
 
 module.exports = {
-  pool,
+  pool: getPool,
   query,
   queryOne
 }; 

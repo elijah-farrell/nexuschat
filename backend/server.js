@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const validateEnv = require('./src/config/validateEnv');
 const socketAuth = require('./src/middleware/socketAuth');
-const { pool, query } = require('./src/config/database');
+const { query } = require('./src/config/database');
 const auth = require('./src/middleware/auth'); // <-- moved up here
 const logger = require('./src/utils/logger'); // Added for detailed logging
 
@@ -240,10 +240,19 @@ app.get('/api/health', async (req, res) => {
     });
   } catch (error) {
     console.error('Health check failed:', error.message);
+    
+    let errorMessage = 'Database connection failed';
+    if (error.message.includes('DATABASE_URL')) {
+      errorMessage = 'Database configuration missing';
+    } else if (error.code === 'ENETUNREACH' || error.code === 'ECONNREFUSED') {
+      errorMessage = 'Database server unreachable';
+    }
+    
     res.status(503).json({ 
       status: 'error',
       database: 'disconnected',
-      error: error.message,
+      error: errorMessage,
+      details: error.message,
       timestamp: new Date().toISOString()
     });
   }

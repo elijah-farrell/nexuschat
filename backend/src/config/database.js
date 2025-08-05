@@ -16,7 +16,6 @@ const getPool = () => {
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     });
 
-    // Test connection on startup
     pool.on('connect', () => {
       console.log('✅ Database connected');
     });

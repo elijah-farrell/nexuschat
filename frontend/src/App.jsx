@@ -168,7 +168,9 @@ const App = () => {
         <AuthProvider>
           <ServerProvider>
             <NotificationProvider>
-              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Router 
+                future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+              >
                 <AppLoading>
                   <Routes>
                     <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />

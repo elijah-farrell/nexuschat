@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { query, queryOne } = require('../../config/database');
 const { sanitizeUsername, sanitizePassword, sanitizeString } = require('../../utils/sanitize');
-const logger = require('../../utils/logger'); // Add logger
+
 
 // Track failed login attempts
 const failedAttempts = new Map(); // username -> { count: number, lockedUntil: timestamp }
@@ -45,13 +45,13 @@ const clearFailedAttempts = (username) => {
 // Register new user
 const register = async (req, res) => {
   try {
-    logger.info(`[REGISTER] Attempt from IP: ${req.ip} - Body: ${JSON.stringify(req.body)}`);
+    console.log(`[REGISTER] Attempt from IP: ${req.ip}`);
     
     const { username, password, name } = req.body;
 
     // Validate input
     if (!username || !password) {
-      logger.warn(`[REGISTER] Missing fields - Username: ${!!username}, Password: ${!!password}`);
+      console.log(`[REGISTER] Missing fields`);
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
@@ -106,7 +106,7 @@ const register = async (req, res) => {
     );
 
     const userId = result.rows[0].id;
-    logger.info(`[REGISTER] User created successfully with ID: ${userId}`);
+          console.log(`[REGISTER] User created successfully`);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -130,7 +130,7 @@ const register = async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error(`[REGISTER] Error: ${error.message}`, error);
+          console.error(`[REGISTER] Error: ${error.message}`);
     
     // Check if it's a database connection error
     if (error.message.includes('Database not connected')) {

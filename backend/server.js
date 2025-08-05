@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -10,13 +9,12 @@ const rateLimit = require('express-rate-limit');
 const validateEnv = require('./src/config/validateEnv');
 const socketAuth = require('./src/middleware/socketAuth');
 const { query } = require('./src/config/database');
-const auth = require('./src/middleware/auth'); // <-- moved up here
-const logger = require('./src/utils/logger'); // Added for detailed logging
+const auth = require('./src/middleware/auth');
 
-// Validate environment variables before starting
+// Validate environment variables
 validateEnv();
 
-// Import routes from new module structure
+// Import routes
 const authRoutes = require('./src/api/auth/auth.routes');
 const messagingRoutes = require('./src/api/messaging/messaging.routes');
 const friendRoutes = require('./src/api/friends/friend.routes');
@@ -46,67 +44,42 @@ app.use((_req, res, next) => {
   next();
 });
 
-// CORS middleware (apply before rate limiting)
+// CORS middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || true, // Allow all origins if FRONTEND_URL not set
+  origin: process.env.FRONTEND_URL,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Origin"],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
 }));
 
-// Add detailed request logging middleware
-app.use((req, res, next) => {
-  logger.info(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'} - User-Agent: ${req.headers['user-agent'] || 'none'}`);
-  next();
-});
-
-// Add CORS debugging
-app.use((req, res, next) => {
-  logger.info(`[CORS DEBUG] Request from: ${req.headers.origin || 'no origin'} to ${req.path}`);
-  next();
-});
-
-// Rate limiting for security
+// Rate limiting
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // limit each IP to 20 login attempts per windowMs (increased from 5)
+  max: 20, // 20 login attempts per 15 minutes
   message: { error: 'Too many login attempts from this IP, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    res.status(429).json({ error: 'Too many login attempts from this IP, please try again later.' });
-  }
 });
 
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs
+  max: 1000, // 1000 requests per 15 minutes
   message: { error: 'Too many requests from this IP, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    res.status(429).json({ error: 'Too many requests from this IP, please try again later.' });
-  }
 });
 
-// Apply rate limiting more specifically
-app.use('/api/auth/login', authLimiter); // Only apply to login endpoint
+app.use('/api/auth/login', authLimiter);
 app.use('/api', generalLimiter);
 
+// Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || true, // Allow all origins if FRONTEND_URL not set
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
-// Socket.IO connection handling with authentication
 io.use(socketAuth);
 
-// Store user socket connections - support multiple sessions per user
+// Store user socket connections
 const userSockets = new Map(); // userId -> Set of socket IDs
 
 io.on('connection', async (socket) => {
@@ -121,14 +94,12 @@ io.on('connection', async (socket) => {
 
   // Update user status to online (only if this is the first session)
   if (userSockets.get(socket.userId).size === 1) {
-            try {
-          await query(
-            'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
-            ['online', socket.userId]
-          );
-      // Emit user online event to all clients
+    try {
+      await query(
+        'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
+        ['online', socket.userId]
+      );
       io.emit('user_online', { userId: socket.userId });
-      // Emit user_status_update event to all clients
       io.emit('user_status_update', { userId: socket.userId, status: 'online' });
     } catch (err) {
       console.error('Error updating user status:', err);
@@ -159,14 +130,12 @@ io.on('connection', async (socket) => {
   // Join user to their channels and DMs
   socket.on('join_rooms', async (data) => {
     try {
-      // Join user's channels
       if (data.channels) {
         data.channels.forEach(channelId => {
           socket.join(`channel_${channelId}`);
         });
       }
       
-      // Join user's DMs
       if (data.dms) {
         data.dms.forEach(dmId => {
           socket.join(`dm_${dmId}`);
@@ -177,26 +146,20 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('disconnect', async (_reason) => {
-    // Remove this specific socket from user's session set
+  socket.on('disconnect', async () => {
     if (userSockets.has(socket.userId)) {
       const userSessionSet = userSockets.get(socket.userId);
       userSessionSet.delete(socket.id);
-      const remainingSessions = userSessionSet.size;
       
-      // If no more sessions, remove the user entry entirely and mark offline immediately
-      if (remainingSessions === 0) {
+      if (userSessionSet.size === 0) {
         userSockets.delete(socket.userId);
         
-        // Mark user offline immediately since no sessions remain
         try {
           await query(
             'UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP WHERE id = $2',
             ['offline', socket.userId]
           );
-          // Emit user offline event to all clients
           io.emit('user_offline', { userId: socket.userId });
-          // Emit user_status_update event to all clients
           io.emit('user_status_update', { userId: socket.userId, status: 'offline' });
         } catch (err) {
           console.error('Error updating user status to offline:', err);
@@ -206,66 +169,34 @@ io.on('connection', async (socket) => {
   });
 });
 
-// Add error handling for Socket.IO
-io.engine.on('connection_error', (err) => {
-  console.error('🔌 Socket.IO connection error:', err);
-});
-
+// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 
-// Serve static files from uploads directory (public access for images)
-app.use('/uploads', (req, res, next) => {
-  // Set CORS headers for image requests
-  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  // Log uploads requests simply
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - uploads`);
-  next();
-}, express.static(path.join(__dirname, 'uploads')));
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Public health check endpoint
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - health`);
-  
-  // Basic server health - always return 200
   const healthData = {
     status: 'ok',
-    server: 'running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    timestamp: new Date().toISOString()
   };
   
   try {
-    // Test database connection (but don't fail the health check)
     const { testConnection } = require('./src/config/database');
     const isConnected = await testConnection();
     healthData.database = isConnected ? 'connected' : 'disconnected';
   } catch (error) {
-    console.error('Health check database test failed:', error.message);
     healthData.database = 'disconnected';
-    healthData.database_error = error.message;
   }
   
   res.json(healthData);
 });
 
-// Attach auth middleware for all /api routes except /api/auth and /api/health
+// Auth middleware for API routes
 app.use('/api', (req, res, next) => {
-  // Skip auth for /api/auth and /api/health
   if (req.path.startsWith('/auth') || req.path === '/health') return next();
   return auth(req, res, next);
-});
-
-// Logging middleware after auth for /api routes
-app.use('/api', (req, res, next) => {
-  // Only log for non-auth, non-health routes
-  if (req.path.startsWith('/auth') || req.path === '/health') return next();
-  const user = req.user ? `userId=${req.user.id}` : 'unauthenticated';
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - ${user}`);
-  next();
 });
 
 // Make io available to routes
@@ -289,7 +220,6 @@ app.use('*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Server error:', err.stack);
   
-  // Don't expose internal errors to clients
   if (err.name === 'MulterError') {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
@@ -300,56 +230,36 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-const PORT = process.env.PORT;
+const PORT = process.env.NODE_ENV === 'production' 
+  ? process.env.PORT || 10000  // Production: require PORT or default to 10000
+  : process.env.PORT || 3000;   // Development: default to 3000
 
-if (!PORT) {
-  console.error('❌ PORT environment variable is required');
-  process.exit(1);
-}
-
-// Initialize database and start server
+// Start server
 const startServer = async () => {
   try {
-    console.log('🚀 Starting NexusChat server...');
-    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🌐 Port: ${PORT}`);
-    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'not set'}`);
-    
-    // Test database connection on startup
+    // Test database connection on startup (silent)
     try {
       const { testConnection } = require('./src/config/database');
       await testConnection();
     } catch (error) {
-      console.error('⚠️  Database connection failed on startup, but server will continue');
-      console.error('   This is normal if DATABASE_URL is not configured yet');
+      console.error('⚠️  Database connection failed on startup');
     }
     
-    // Start server
     server.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
-      
-      // Show appropriate health check URL based on environment
-      if (process.env.NODE_ENV === 'production') {
-        console.log(`🔗 Health check: https://nexuschat-rx76.onrender.com/api/health`);
-      } else {
-        console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-      }
-      
-      console.log(`🌐 Ready to accept connections`);
+      console.log(`🚀 NexusChat server running on port ${PORT}`);
+      console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
     
-    // Handle server errors
     server.on('error', (error) => {
-      console.error('❌ Server error:', error);
+      console.error('❌ Server error:', error.message);
       if (error.code === 'EADDRINUSE') {
         console.error(`   Port ${PORT} is already in use`);
-        console.error('   Please use a different port or stop the existing server');
       }
       process.exit(1);
     });
     
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error('❌ Failed to start server:', error.message);
     process.exit(1);
   }
 };

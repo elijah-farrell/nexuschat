@@ -1,7 +1,6 @@
 const validateEnv = () => {
   const required = [
     'JWT_SECRET',
-    'PORT',
     'FRONTEND_URL',
     'DATABASE_URL'
   ];
@@ -17,19 +16,13 @@ const validateEnv = () => {
     process.exit(1);
   }
 
-
-
   // Validate JWT secret length
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
     console.error('❌ JWT_SECRET must be at least 32 characters long for security.');
     process.exit(1);
   }
 
-  // Validate PORT is a number
-  if (isNaN(parseInt(process.env.PORT))) {
-    console.error('❌ PORT must be a valid number.');
-    process.exit(1);
-  }
+
 
   // Validate FRONTEND_URL is a valid URL
   try {
@@ -40,13 +33,6 @@ const validateEnv = () => {
   }
 
 
-
-  // Show minimal environment info for development
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`🚀 Starting on port ${process.env.PORT}`);
-  }
-
-  // Environment validation passed silently
 };
 
 module.exports = validateEnv; 

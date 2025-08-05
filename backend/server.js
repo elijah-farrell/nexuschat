@@ -290,13 +290,39 @@ if (!PORT) {
 // Initialize database and start server
 const startServer = async () => {
   try {
-    // Initialize database
-    await initializeDatabase();
+    console.log('🚀 Starting NexusChat server...');
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Port: ${PORT}`);
+    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'not set'}`);
+    
+    // Initialize database (but don't crash if it fails)
+    try {
+      console.log('🗄️ Initializing database connection...');
+      await initializeDatabase();
+      console.log('✅ Database connection successful');
+    } catch (dbError) {
+      console.error('⚠️ Database connection failed, but continuing...');
+      console.error('   This means some features may not work properly');
+      console.error('   Error:', dbError.message);
+    }
     
     // Start server
     server.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🌐 Ready to accept connections`);
     });
+    
+    // Handle server errors
+    server.on('error', (error) => {
+      console.error('❌ Server error:', error);
+      if (error.code === 'EADDRINUSE') {
+        console.error(`   Port ${PORT} is already in use`);
+        console.error('   Please use a different port or stop the existing server');
+      }
+      process.exit(1);
+    });
+    
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);

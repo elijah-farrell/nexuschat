@@ -1,4 +1,6 @@
 const { Pool } = require('pg');
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
 
 // Lazy database pool creation
 let pool = null;

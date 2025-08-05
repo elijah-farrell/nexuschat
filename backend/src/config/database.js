@@ -1,6 +1,4 @@
 const { Pool } = require('pg');
-const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first");
 
 // Lazy database pool creation
 let pool = null;
@@ -12,16 +10,10 @@ const getPool = () => {
     }
     
     console.log('🔗 Creating database pool...');
-    console.log(`   Environment: ${process.env.NODE_ENV}`);
-    console.log(`   SSL: ${process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled'}`);
     
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      family: 4, // Force IPv4 to avoid IPv6 connectivity issues
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
     });
 
     // Test connection on startup
@@ -49,7 +41,6 @@ const query = async (sql, params = []) => {
     console.error('❌ Database query failed:');
     console.error(`   SQL: ${sql}`);
     console.error(`   Error: ${error.message}`);
-    console.error(`   Code: ${error.code}`);
     throw error;
   }
 };
@@ -60,8 +51,21 @@ const queryOne = async (sql, params = []) => {
   return result.rows[0];
 };
 
+// Test database connection
+const testConnection = async () => {
+  try {
+    const result = await query('SELECT 1 as test');
+    console.log('✅ Database connection test successful');
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error.message);
+    return false;
+  }
+};
+
 module.exports = {
   pool: getPool,
   query,
-  queryOne
+  queryOne,
+  testConnection
 }; 

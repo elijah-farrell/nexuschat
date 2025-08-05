@@ -240,8 +240,9 @@ app.get('/api/health', async (req, res) => {
   
   try {
     // Test database connection (but don't fail the health check)
-    const result = await query('SELECT 1 as test');
-    healthData.database = 'connected';
+    const { testConnection } = require('./src/config/database');
+    const isConnected = await testConnection();
+    healthData.database = isConnected ? 'connected' : 'disconnected';
   } catch (error) {
     console.error('Health check database test failed:', error.message);
     healthData.database = 'disconnected';
@@ -314,12 +315,26 @@ const startServer = async () => {
     console.log(`🌐 Port: ${PORT}`);
     console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'not set'}`);
     
-
+    // Test database connection on startup
+    try {
+      const { testConnection } = require('./src/config/database');
+      await testConnection();
+    } catch (error) {
+      console.error('⚠️  Database connection failed on startup, but server will continue');
+      console.error('   This is normal if DATABASE_URL is not configured yet');
+    }
     
     // Start server
     server.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+      
+      // Show appropriate health check URL based on environment
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`🔗 Health check: https://nexuschat-rx76.onrender.com/api/health`);
+      } else {
+        console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+      }
+      
       console.log(`🌐 Ready to accept connections`);
     });
     

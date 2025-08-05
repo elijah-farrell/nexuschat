@@ -72,6 +72,17 @@ CREATE TABLE dm_messages (
 
 ## 🔧 Backend Configuration
 
+### Database Setup
+The application includes a database setup script to initialize the PostgreSQL schema:
+
+```bash
+# Run database setup (after DATABASE_URL is configured)
+cd backend
+npm run setup-db
+```
+
+This will create all necessary tables, indexes, and triggers defined in `backend/schema.sql`.
+
 ### Environment Variables
 Create `backend/.env`:
 
@@ -219,6 +230,22 @@ const pool = new Pool({
    
    # Verify environment variables
    echo $DATABASE_URL
+   ```
+
+2. **IPv6 Connection Issues (ENETUNREACH)**
+   - The application is configured to force IPv4 connections
+   - If you see `ENETUNREACH` errors, ensure your database provider supports IPv4
+   - Check that `DATABASE_URL` uses the correct host and port
+   - For Render deployments, ensure the database is in the same region as your service
+
+3. **Database Setup Issues**
+   ```bash
+   # Run database setup manually
+   cd backend
+   node setup-db.js
+   
+   # Check if tables exist
+   psql $DATABASE_URL -c "\dt"
    ```
 
 2. **CORS Errors**

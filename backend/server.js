@@ -227,9 +227,26 @@ app.use('/uploads', (req, res, next) => {
 }, express.static(path.join(__dirname, 'uploads')));
 
 // Public health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - health`);
-  res.json({ status: 'ok' });
+  
+  try {
+    // Test database connection
+    const result = await query('SELECT 1 as test');
+    res.json({ 
+      status: 'ok',
+      database: 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Health check failed:', error.message);
+    res.status(503).json({ 
+      status: 'error',
+      database: 'disconnected',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Attach auth middleware for all /api routes except /api/auth and /api/health

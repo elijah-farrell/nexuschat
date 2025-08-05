@@ -131,7 +131,25 @@ const register = async (req, res) => {
     });
   } catch (error) {
     logger.error(`[REGISTER] Error: ${error.message}`, error);
-    res.status(500).json({ error: 'Registration failed' });
+    
+    // Check if it's a database connection error
+    if (error.message.includes('Database not connected')) {
+      return res.status(503).json({ error: 'Database connection failed. Please try again later.' });
+    }
+    
+    // Check if it's a network error
+    if (error.code === 'ENETUNREACH' || error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ error: 'Database connection failed. Please try again later.' });
+    }
+    
+    // Check if it's a duplicate username error
+    if (error.code === '23505' && error.constraint === 'users_username_key') {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+    
+    // For other errors, log the full error but return a generic message
+    console.error('Full registration error:', error);
+    res.status(500).json({ error: 'Registration failed - please try again' });
   }
 };
 
@@ -226,7 +244,20 @@ const login = async (req, res) => {
     });
   } catch (error) {
     logger.error(`[LOGIN] Error: ${error.message}`, error);
-    res.status(500).json({ error: 'Login failed' });
+    
+    // Check if it's a database connection error
+    if (error.message.includes('Database not connected')) {
+      return res.status(503).json({ error: 'Database connection failed. Please try again later.' });
+    }
+    
+    // Check if it's a network error
+    if (error.code === 'ENETUNREACH' || error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ error: 'Database connection failed. Please try again later.' });
+    }
+    
+    // For other errors, log the full error but return a generic message
+    console.error('Full login error:', error);
+    res.status(500).json({ error: 'Login failed - please try again' });
   }
 };
 

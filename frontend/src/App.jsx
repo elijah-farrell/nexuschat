@@ -5,6 +5,10 @@ import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
+import Home from './pages/Home';
+import Friends from './pages/Friends';
+import Chat from './pages/Chat';
+import Settings from './pages/Settings';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -178,13 +182,18 @@ const App = () => {
                     <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
                     <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
                     <Route
-                      path="/dashboard/*"
+                      path="/dashboard"
                       element={
                         <ProtectedRoute>
                           <AppLayout mode={mode} setMode={setMode} />
                         </ProtectedRoute>
                       }
-                    />
+                    >
+                      <Route index element={<Home mode={mode} setMode={setMode} />} />
+                      <Route path="friends" element={<Friends mode={mode} setMode={setMode} />} />
+                      <Route path="chat" element={<Chat mode={mode} setMode={setMode} />} />
+                      <Route path="settings" element={<Settings mode={mode} setMode={setMode} />} />
+                    </Route>
                     <Route path="*" element={<Navigate to="/" />} />
                   </Routes>
                 </AppLoading>

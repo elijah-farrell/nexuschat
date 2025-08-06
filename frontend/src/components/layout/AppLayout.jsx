@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Box, CssBaseline } from '@mui/material';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import MainSidebar from './MainSidebar';
 import DMSidebar from './DMSidebar';
-import Friends from '../../pages/Friends';
-import Home from '../../pages/Home';
-import Chat from '../../pages/Chat';
-import Settings from '../../pages/Settings';
 
 import UserProfile from '../user/UserProfile';
 import ViewProfile from '../user/ViewProfile';
@@ -68,18 +65,14 @@ const ConnectionBanner = () => {
 
 const AppLayout = ({ mode, setMode }) => {
   const { user } = useAuth();
-  const [activeSection, setActiveSection] = useState(() => {
-    // Always start with 'home' for new sessions, but allow restoring for existing sessions
-    const savedSection = localStorage.getItem('nexuschat-active-section');
-    return savedSection || 'home';
-  });
+  const location = useLocation();
+  const navigate = useNavigate();
+  
   const [selectedChannel, setSelectedChannel] = useState(() => {
-    // Restore selected channel from localStorage
     const savedChannel = localStorage.getItem('nexuschat-selected-channel');
     return savedChannel && savedChannel !== 'null' && savedChannel !== 'undefined' ? JSON.parse(savedChannel) : null;
   });
   const [selectedDirectMessage, setSelectedDirectMessage] = useState(() => {
-    // Restore selected direct message from localStorage
     const savedDM = localStorage.getItem('nexuschat-selected-dm');
     return savedDM && savedDM !== 'null' && savedDM !== 'undefined' ? JSON.parse(savedDM) : null;
   });
@@ -91,57 +84,17 @@ const AppLayout = ({ mode, setMode }) => {
   const [dmButtonActive, setDmButtonActive] = useState(false);
   const [dmDetails, setDmDetails] = useState(null);
 
-  // Fetch DM details when selectedDirectMessage changes
-  useEffect(() => {
-    if (selectedDirectMessage && activeSection === 'directs') {
-      fetchDmDetails(selectedDirectMessage);
-    }
-  }, [selectedDirectMessage, activeSection]);
+  // Set page title based on current URL
+  usePageTitle(getPageTitle(location, selectedDirectMessage, dmDetails, user));
 
-  const fetchDmDetails = async (dmId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${dmId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDmDetails(data.dm);
-      }
-    } catch (error) {
-      console.error('Error fetching DM details:', error);
-    }
+  // Get current section from URL
+  const getCurrentSection = () => {
+    const path = location.pathname;
+    if (path.includes('/friends')) return 'friends';
+    if (path.includes('/chat')) return 'chat';
+    if (path.includes('/settings')) return 'settings';
+    return 'home';
   };
-
-  // Dynamic page title based on active section
-  usePageTitle(getPageTitle(activeSection, selectedDirectMessage, dmDetails, user));
-
-  // Ensure we start on home when the component mounts
-  useEffect(() => {
-    // If no active section is saved, default to home
-    if (!localStorage.getItem('nexuschat-active-section')) {
-      setActiveSection('home');
-    }
-  }, []);
-
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('nexuschat-active-section', activeSection);
-  }, [activeSection]);
-
-  useEffect(() => {
-    localStorage.setItem('nexuschat-selected-channel', JSON.stringify(selectedChannel));
-  }, [selectedChannel]);
-
-  useEffect(() => {
-    localStorage.setItem('nexuschat-selected-dm', JSON.stringify(selectedDirectMessage));
-  }, [selectedDirectMessage]);
-
-
 
   const handleSectionChange = (section) => {
     if (section === 'directs') {
@@ -149,7 +102,24 @@ const AppLayout = ({ mode, setMode }) => {
       setShowDMSidebar((prev) => !prev);
       setTimeout(() => setDmButtonActive(false), 350);
     } else {
-      setActiveSection(section);
+      // Navigate to the appropriate route
+      switch (section) {
+        case 'home':
+          navigate('/dashboard');
+          break;
+        case 'friends':
+          navigate('/dashboard/friends');
+          break;
+        case 'chat':
+          navigate('/dashboard/chat');
+          break;
+        case 'settings':
+          navigate('/dashboard/settings');
+          break;
+        default:
+          navigate('/dashboard');
+      }
+      
       if (section !== 'friends' && section !== 'home') {
         setShowDMSidebar(false);
       }
@@ -176,57 +146,9 @@ const AppLayout = ({ mode, setMode }) => {
     }
   };
 
+  // Use React Router's Outlet to render nested routes
   const renderMainContent = () => {
-    switch (activeSection) {
-      case 'home':
-        return (
-          <Home 
-            onShowUserProfile={(userId) => {
-              if (userId === user?.id) {
-                // Show current user's profile for editing
-                setShowUserProfile(true);
-              } else {
-                // Show other user's profile for viewing
-                setViewProfileUserId(userId);
-                setShowViewProfile(true);
-              }
-            }}
-            onSelectDirectMessage={handleSelectDirectMessage}
-            mode={mode}
-            setMode={setMode}
-          />
-        );
-      case 'friends':
-        return (
-          <Friends 
-            onShowUserProfile={(userId) => {
-              if (userId === user?.id) {
-                setShowUserProfile(true);
-              } else {
-                setViewProfileUserId(userId);
-                setShowViewProfile(true);
-              }
-            }}
-            onSelectDirectMessage={handleSelectDirectMessage}
-            mode={mode}
-            setMode={setMode}
-          />
-        );
-
-      case 'settings':
-        return <Settings mode={mode} setMode={setMode} />;
-      case 'directs':
-        return (
-          <Chat
-            mode="dm"
-            selectedDirectMessage={selectedDirectMessage}
-            onSelectDirectMessage={setSelectedDirectMessage}
-          />
-        );
-      default:
-        // Remove server content rendering, always show Home
-        return <Home />;
-    }
+    return <Outlet />;
   };
 
   return (
@@ -235,7 +157,7 @@ const AppLayout = ({ mode, setMode }) => {
       <ConnectionBanner />
       {/* Main Sidebar */}
       <MainSidebar
-        activeSection={activeSection}
+        activeSection={getCurrentSection()}
         onSectionChange={handleSectionChange}
         onShowUserProfile={() => setShowUserProfile(true)}
         showDMSidebar={showDMSidebar}
@@ -280,29 +202,14 @@ const AppLayout = ({ mode, setMode }) => {
   );
 };
 
-// Helper function to get page title based on active section
-const getPageTitle = (activeSection, selectedDirectMessage, dmDetails, user) => {
-  switch (activeSection) {
-    case 'home':
-      return 'Home';
-    case 'friends':
-      return 'Friends';
-    case 'settings':
-      return 'Settings';
-    case 'directs':
-      if (selectedDirectMessage && dmDetails) {
-        if (dmDetails.type === 'group') {
-          return dmDetails.name || 'Group DM';
-        } else {
-          // For 1-on-1 DMs, find the other user
-          const otherUser = dmDetails.members?.find(m => String(m.id) !== String(user?.id));
-          return otherUser ? `@${otherUser.username}` : 'Direct Message';
-        }
-      }
-      return 'Direct Messages';
-    default:
-      return 'Home';
-  }
+// Helper function to get page title based on current URL
+const getPageTitle = (location, selectedDirectMessage, dmDetails, user) => {
+  const path = location.pathname;
+  if (path.includes('/friends')) return 'Friends | NexusChat';
+  if (path.includes('/chat')) return 'Chat | NexusChat';
+  if (path.includes('/settings')) return 'Settings | NexusChat';
+  if (path.includes('/dashboard')) return 'Home | NexusChat';
+  return 'NexusChat';
 };
 
 export default AppLayout; 

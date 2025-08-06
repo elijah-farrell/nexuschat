@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
     if (shouldNavigateAfterRegister && user && isReady) {
       setShouldNavigateAfterRegister(false);
       // Use window.location to navigate after state is confirmed
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     }
   }, [shouldNavigateAfterRegister, user, isReady]);
 
@@ -264,6 +264,15 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
       
+      // Clear any existing auth data before setting new user
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('nexuschat-active-section');
+      localStorage.removeItem('nexuschat-selected-channel');
+      localStorage.removeItem('nexuschat-selected-dm');
+      localStorage.removeItem('nexuschat-selected-server');
+      localStorage.removeItem('nexuschat-friends-active-tab');
+      
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
@@ -301,6 +310,15 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
       console.log('🔍 REGISTER: Success! Token:', data.token ? 'exists' : 'missing', 'User:', data.user);
+      
+      // Clear any existing auth data before setting new user
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('nexuschat-active-section');
+      localStorage.removeItem('nexuschat-selected-channel');
+      localStorage.removeItem('nexuschat-selected-dm');
+      localStorage.removeItem('nexuschat-selected-server');
+      localStorage.removeItem('nexuschat-friends-active-tab');
       
       // Set token first, then user to ensure proper initialization
       console.log('🔍 REGISTER: Setting token to:', data.token);

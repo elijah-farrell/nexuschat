@@ -178,7 +178,7 @@ const App = () => {
                     <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
                     <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
                     <Route
-                      path="/app/*"
+                      path="/dashboard/*"
                       element={
                         <ProtectedRoute>
                           <AppLayout mode={mode} setMode={setMode} />

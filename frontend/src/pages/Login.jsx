@@ -156,7 +156,7 @@ const Login = ({ mode, setMode }) => {
     try {
       const result = await login(formData.username, formData.password);
       if (result.success) {
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setError(result.error || 'Login failed. Please try again.');
       }

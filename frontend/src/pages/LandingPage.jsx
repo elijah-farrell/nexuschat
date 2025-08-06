@@ -1,11 +1,46 @@
 import * as THREE from 'three'
-import React, { Suspense, useRef } from 'react'
+import React, { Suspense, useRef, useState, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Html, Environment, useGLTF, ContactShadows, OrbitControls } from '@react-three/drei'
-import HeroPage from '../components/landing/HeroPage.jsx'
+import { IconButton, Typography, Box } from '@mui/material'
+import { DarkMode, LightMode } from '@mui/icons-material'
+import NexusChatHeroPage from '../components/landing/HeroPage.jsx'
 import '../components/landing/styles.css'
 
-function Model(props) {
+// Custom Hub Icon SVG component
+const CustomHubIcon = ({ size = 32, color = 'white' }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="landingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#6366F1', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#8B5CF6', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    
+    {/* Background circle with gradient */}
+    <circle cx="16" cy="16" r="15" fill="url(#landingGradient)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+    
+    {/* Hub icon */}
+    <g transform="translate(8, 8)" fill={color}>
+      {/* Center circle */}
+      <circle cx="8" cy="8" r="3" fill={color}/>
+      
+      {/* Connection lines */}
+      <rect x="7" y="2" width="2" height="4" rx="1" fill={color}/>
+      <rect x="7" y="10" width="2" height="4" rx="1" fill={color}/>
+      <rect x="2" y="7" width="4" height="2" rx="1" fill={color}/>
+      <rect x="10" y="7" width="4" height="2" rx="1" fill={color}/>
+      
+      {/* Corner dots */}
+      <circle cx="4" cy="4" r="1.5" fill={color}/>
+      <circle cx="12" cy="4" r="1.5" fill={color}/>
+      <circle cx="4" cy="12" r="1.5" fill={color}/>
+      <circle cx="12" cy="12" r="1.5" fill={color}/>
+    </g>
+  </svg>
+);
+
+function Model({ mode, ...props }) {
   const group = useRef()
   // Load model
   const { nodes, materials } = useGLTF('/mac-draco.glb')
@@ -26,8 +61,14 @@ function Model(props) {
           <mesh material={materials['matte.001']} geometry={nodes['Cube008_1'].geometry} />
           <mesh geometry={nodes['Cube008_2'].geometry}>
             {/* Drei's HTML component can "hide behind" canvas geometry */}
-            <Html className="content" rotation-x={-Math.PI / 2} position={[0, 0.05, -0.09]} transform occlude>
-              <HeroPage />
+            <Html 
+              className="content" 
+              rotation-x={-Math.PI / 2} 
+              position={[0, 0.05, -0.09]} 
+              transform 
+              occlude
+            >
+              <NexusChatHeroPage mode={mode} />
             </Html>
           </mesh>
         </group>
@@ -43,18 +84,167 @@ function Model(props) {
 }
 
 const LandingPage = ({ mode, setMode }) => {
+  const [particles, setParticles] = useState([])
+
+  // Particle animation effect
+  useEffect(() => {
+    const createParticle = () => ({
+      id: Math.random(),
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      size: Math.random() * 3 + 1,
+      speedX: (Math.random() - 0.5) * 2,
+      speedY: (Math.random() - 0.5) * 2,
+      opacity: Math.random() * 0.5 + 0.1
+    });
+
+    const initialParticles = Array.from({ length: 50 }, createParticle);
+    setParticles(initialParticles);
+
+    const animateParticles = () => {
+      setParticles(prev => prev.map(particle => {
+        let newX = particle.x + particle.speedX;
+        let newY = particle.y + particle.speedY;
+        
+        // Boundary checking
+        if (newX > window.innerWidth) newX = 0;
+        if (newX < 0) newX = window.innerWidth;
+        if (newY > window.innerHeight) newY = 0;
+        if (newY < 0) newY = window.innerHeight;
+        
+        return {
+          ...particle,
+          x: newX,
+          y: newY
+        };
+      }));
+    };
+
+    const interval = setInterval(animateParticles, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+
+
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <Canvas camera={{ position: [-5, 0, -15], fov: 55 }}>
+    <div 
+      style={{ 
+        width: '100vw', 
+        height: '100vh', 
+        position: 'relative', 
+        overflow: 'hidden',
+        background: mode === 'dark' 
+          ? 'linear-gradient(135deg, #0F0F23 0%, #1E1B4B 50%, #312E81 100%)'
+          : 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%)'
+      }}
+    >
+      {/* Animated particles */}
+      {particles.map(particle => (
+        <Box
+          key={particle.id}
+          sx={{
+            position: 'absolute',
+            width: particle.size,
+            height: particle.size,
+            background: mode === 'dark' 
+              ? 'rgba(139, 92, 246, 0.3)' 
+              : 'rgba(255, 255, 255, 0.4)',
+            borderRadius: '50%',
+            left: particle.x,
+            top: particle.y,
+            opacity: particle.opacity,
+            pointerEvents: 'none',
+            zIndex: 3
+          }}
+        />
+      ))}
+      
+      {/* Logo */}
+      <Box
+        onClick={() => window.location.reload()}
+        sx={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          zIndex: 10,
+          cursor: 'pointer',
+          transition: 'transform 0.2s ease',
+          '&:hover': {
+            transform: 'scale(1.05)'
+          }
+        }}
+      >
+        <CustomHubIcon size={32} color="white" />
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 700,
+            color: 'white',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}
+        >
+          NexusChat
+        </Typography>
+      </Box>
+
+      {/* Dark Mode Toggle */}
+      <IconButton
+        onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}
+        sx={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+          color: mode === 'dark' ? 'white' : 'black',
+          bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+          backdropFilter: 'blur(10px)',
+          '&:hover': {
+            bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+          },
+          zIndex: 10
+        }}
+      >
+        {mode === 'dark' ? <LightMode /> : <DarkMode />}
+      </IconButton>
+      
+      <Canvas 
+        camera={{ position: [-5, 0, -15], fov: 55 }}
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 2,
+          background: 'transparent'
+        }}
+        gl={{ 
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+          preserveDrawingBuffer: true
+        }}
+        frameloop="demand"
+        onWheel={(e) => {
+          e.stopPropagation();
+        }}
+      >
         <pointLight position={[10, 10, 10]} intensity={1.5} />
         <Suspense fallback={null}>
           <group rotation={[0, Math.PI, 0]} position={[0, 1, 0]}>
-            <Model />
+            <Model mode={mode} />
           </group>
           <Environment preset="city" />
         </Suspense>
         <ContactShadows position={[0, -4.5, 0]} scale={20} blur={2} far={4.5} />
-        <OrbitControls enablePan={false} enableZoom={false} minPolarAngle={Math.PI / 2.2} maxPolarAngle={Math.PI / 2.2} />
+        <OrbitControls 
+          enablePan={false} 
+          enableZoom={false} 
+          minPolarAngle={Math.PI / 2.2} 
+          maxPolarAngle={Math.PI / 2.2}
+        />
       </Canvas>
     </div>
   )

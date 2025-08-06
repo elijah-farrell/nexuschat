@@ -1,10 +1,10 @@
 # NexusChat 🚀
 
-A modern chat application built with React, Node.js, and PostgreSQL. Send direct messages to friends and stay connected.
+A modern chat application built with React, Node.js, and PostgreSQL. Experience a stunning 3D landing page before diving into real-time messaging with friends.
 
 ## Features
-
-NexusChat brings you a complete messaging experience with instant messaging, friend management, profile customization, and secure authentication - all wrapped in a beautiful, responsive real time interface.
+NexusChat brings you a complete messaging experience with instant messaging, friend management, profile customization, and 
+secure authentication - all wrapped in a beautiful, responsive real time interface.
 
 ## 🆓 Free Deployment
 
@@ -32,36 +32,40 @@ This project is designed to be **completely free** to deploy and use:
 
 ## 📱 Screenshots
 
-### 🏠 Homepage & Authentication
-![Initial Homepage](images/initial_homepage.png)
-*Clean and modern homepage with user-friendly navigation*
+### 🚀 Landing Experience
+![Landing Page](images/landing_page.png)
+*Immersive 3D laptop showcase with animated particles - your first impression of NexusChat*
 
+### 🔐 Authentication
 ![Login Page](images/login_page.png)
-*Secure login interface with elegant design*
+*Secure login*
 
 ![Register Username](images/register_username.png)
-*User registration with username validation*
+*Simple username registration*
 
 ![Register Password](images/register_password.png)
-*Password creation with security features*
+*Secure password creation*
 
-### 👥 Social Features
-![Friends Page](images/friends_page.png)
-*Comprehensive friends management system*
+### 🏠 Main Application
+![Dashboard](images/initial_homepage.png)
+*Clean dashboard interface after login*
 
-![View Friends Profile](images/view_friends_profile.png)
-*Detailed user profiles with status information*
+### 💬 Messaging & Social
+![Chat Interface](images/dm_sidebar_chat_area.png)
+*Real-time messaging with intuitive sidebar*
 
-### 💬 Messaging Interface
-![DM Sidebar & Chat Area](images/dm_sidebar_chat_area.png)
-*Real-time messaging with sidebar navigation*
+![Friends Management](images/friends_page.png)
+*Comprehensive friends system*
 
-### ⚙️ Settings & Customization
-![Settings Page](images/settings-page.png)
-*Comprehensive settings and preferences*
+![User Profiles](images/view_friends_profile.png)
+*Detailed user profiles and status*
 
-![Edit Profile Personalization](images/edit_profile_personalization.jpeg)
-*Profile customization with personalization options*
+### ⚙️ Personalization
+![Settings](images/settings-page.png)
+*Complete settings and preferences*
+
+![Profile Customization](images/edit_profile_personalization.jpeg)
+*Personalize your profile and appearance*
 
 ## 📄 License
 

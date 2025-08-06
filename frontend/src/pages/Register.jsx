@@ -25,7 +25,7 @@ import {
   DarkMode,
   LightMode,
   PersonAdd,
-  ArrowBack,
+  Home,
   ArrowForward,
   Info
 } from '@mui/icons-material';
@@ -555,6 +555,26 @@ const Register = ({ mode, setMode }) => {
         }}
       >
         {mode === 'dark' ? <LightMode /> : <DarkMode />}
+      </IconButton>
+
+      {/* Back to Home button */}
+      <IconButton
+        component={RouterLink}
+        to="/"
+        sx={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          color: mode === 'dark' ? 'white' : 'black',
+          bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+          backdropFilter: 'blur(10px)',
+          '&:hover': {
+            bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+          },
+          zIndex: 10
+        }}
+      >
+        <Home />
       </IconButton>
 
       <Container maxWidth="sm">

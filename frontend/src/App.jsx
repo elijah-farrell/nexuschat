@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline, createTheme, Button } from '@mui/material';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import LandingPage from './pages/LandingPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -16,12 +17,13 @@ const AppLoading = ({ children }) => {
   const { isFullyReady, user, logout } = useAuth();
   const location = window.location.pathname;
   const isAuthPage = location === '/login' || location === '/register';
+  const isLandingPage = location === '/';
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
   const [showRetryButton, setShowRetryButton] = useState(false);
 
   // Show timeout message after 10 seconds if still loading
   useEffect(() => {
-    if (!isFullyReady && !isAuthPage) {
+    if (!isFullyReady && !isAuthPage && !isLandingPage) {
       const timeout = setTimeout(() => {
         setShowTimeoutMessage(true);
       }, 10000); // 10 seconds
@@ -38,7 +40,7 @@ const AppLoading = ({ children }) => {
       setShowTimeoutMessage(false);
       setShowRetryButton(false);
     }
-  }, [isFullyReady, isAuthPage]);
+  }, [isFullyReady, isAuthPage, isLandingPage]);
 
   const handleRetry = () => {
     // Clear all auth state and reload
@@ -46,8 +48,8 @@ const AppLoading = ({ children }) => {
     window.location.reload();
   };
 
-  // Show loading screen if not fully ready and not on auth pages
-  if (!isFullyReady && !isAuthPage) {
+  // Show loading screen if not fully ready and not on auth pages or landing page
+  if (!isFullyReady && !isAuthPage && !isLandingPage) {
     return (
       <Fade in={true} timeout={500}>
         <Box
@@ -172,10 +174,11 @@ const App = () => {
               >
                 <AppLoading>
                   <Routes>
+                    <Route path="/" element={<LandingPage mode={mode} setMode={setMode} />} />
                     <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
                     <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
                     <Route
-                      path="/*"
+                      path="/app/*"
                       element={
                         <ProtectedRoute>
                           <AppLayout mode={mode} setMode={setMode} />

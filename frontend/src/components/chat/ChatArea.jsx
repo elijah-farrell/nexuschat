@@ -35,6 +35,7 @@ const ChatArea = React.memo(({
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
   const [dmId, setDmId] = useState(null);
   const [dmInfo, setDmInfo] = useState(null);
@@ -273,10 +274,11 @@ const ChatArea = React.memo(({
   const fetchDMInfo = async (overrideDmId = null) => {
     if (!token) return;
     try {
+      setError(null);
       const id = overrideDmId || dmId;
       if (!id) return;
       
-              const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -285,9 +287,12 @@ const ChatArea = React.memo(({
       if (response.ok) {
         const data = await response.json();
         setDmInfo(data.dm);
+      } else {
+        setError('Failed to load conversation');
       }
     } catch (error) {
       console.error('Error fetching DM info:', error);
+      setError('Failed to load conversation');
     }
   };
 
@@ -295,6 +300,7 @@ const ChatArea = React.memo(({
     if (!token) return;
     setLoading(true);
     try {
+      setError(null);
       let url;
       if (selectedChannel) {
         url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/channels/${selectedChannel.id}/messages`;
@@ -314,10 +320,10 @@ const ChatArea = React.memo(({
         const data = await response.json();
         setMessages(data.messages || data);
       } else {
-        // setError('Failed to load messages'); // Original code had this line commented out
+        setError('Failed to load messages');
       }
     } catch (error) {
-      // setError('Network error'); // Original code had this line commented out
+      setError('Network error');
     } finally {
       setLoading(false);
     }
@@ -422,7 +428,15 @@ const ChatArea = React.memo(({
     if (!timestamp) return '';
     
     try {
-      const date = new Date(timestamp);
+      // Parse the timestamp and convert to local time
+      let date;
+      if (typeof timestamp === 'string') {
+        // Backend now sends proper UTC timestamps with Z
+        date = new Date(timestamp);
+      } else {
+        date = new Date(timestamp);
+      }
+      
       if (isNaN(date.getTime())) return '';
       
       // Discord-like format: 1:00 PM, 11:30 AM, etc.
@@ -441,7 +455,15 @@ const ChatArea = React.memo(({
     if (!timestamp) return '';
     
     try {
-      const date = new Date(timestamp);
+      // Parse the timestamp and convert to local time
+      let date;
+      if (typeof timestamp === 'string') {
+        // Backend now sends proper UTC timestamps with Z
+        date = new Date(timestamp);
+      } else {
+        date = new Date(timestamp);
+      }
+      
       if (isNaN(date.getTime())) return '';
       
       const now = new Date();
@@ -490,7 +512,15 @@ const ChatArea = React.memo(({
     if (!timestamp) return '';
     
     try {
-      const date = new Date(timestamp);
+      // Parse the timestamp and convert to local time
+      let date;
+      if (typeof timestamp === 'string') {
+        // Backend now sends proper UTC timestamps with Z
+        date = new Date(timestamp);
+      } else {
+        date = new Date(timestamp);
+      }
+      
       if (isNaN(date.getTime())) return '';
       
       // Discord-like full timestamp: "Today at 1:00 PM" or "July 18, 2025 at 1:00 PM"
@@ -531,8 +561,22 @@ const ChatArea = React.memo(({
   const shouldShowDateHeader = (currentMessage, previousMessage) => {
     if (!previousMessage) return true;
     
-    const currentDate = new Date(currentMessage.created_at);
-    const previousDate = new Date(previousMessage.created_at);
+    // Parse timestamps with proper UTC conversion
+    let currentDate, previousDate;
+    
+    if (typeof currentMessage.created_at === 'string') {
+      // Backend now sends proper UTC timestamps with Z
+      currentDate = new Date(currentMessage.created_at);
+    } else {
+      currentDate = new Date(currentMessage.created_at);
+    }
+    
+    if (typeof previousMessage.created_at === 'string') {
+      // Backend now sends proper UTC timestamps with Z
+      previousDate = new Date(previousMessage.created_at);
+    } else {
+      previousDate = new Date(previousMessage.created_at);
+    }
     
     // Show header if dates are different
     return currentDate.toDateString() !== previousDate.toDateString();
@@ -606,7 +650,8 @@ const ChatArea = React.memo(({
     }
   };
 
-  if (!selectedChannel && !selectedDirectMessage) {
+  // Show error state if there's an error
+  if (error) {
     return (
       <Box
         sx={{
@@ -631,21 +676,24 @@ const ChatArea = React.memo(({
               width: 80,
               height: 80,
               borderRadius: '50%',
-              bgcolor: 'primary.main',
+              bgcolor: 'error.main',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
             <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-              #
+              !
             </Typography>
           </Box>
           <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600 }}>
-            Welcome to NexusChat!
+            Something went wrong
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-            Select a channel or start a direct message to begin chatting
+            {error}
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+            Try selecting a different friend
           </Typography>
         </Box>
       </Box>
@@ -791,16 +839,25 @@ const ChatArea = React.memo(({
               const prevMsg = messages[index - 1];
               const nextMsg = messages[index + 1];
               
-              // Improved message grouping logic
+              // Improved message grouping logic with proper UTC conversion
+              const parseTimestamp = (timestamp) => {
+                if (typeof timestamp === 'string') {
+                  // Backend now sends proper UTC timestamps with Z
+                  return new Date(timestamp);
+                } else {
+                  return new Date(timestamp);
+                }
+              };
+              
               const isFirstInGroup =
                 !prevMsg ||
                 prevMsg.sender_id !== msg.sender_id ||
-                new Date(msg.created_at) - new Date(prevMsg.created_at) > 5 * 60 * 1000; // 5 minutes
+                parseTimestamp(msg.created_at) - parseTimestamp(prevMsg.created_at) > 5 * 60 * 1000; // 5 minutes
               
               const isLastInGroup =
                 !nextMsg ||
                 nextMsg.sender_id !== msg.sender_id ||
-                new Date(nextMsg.created_at) - new Date(msg.created_at) > 5 * 60 * 1000; // 5 minutes
+                parseTimestamp(nextMsg.created_at) - parseTimestamp(msg.created_at) > 5 * 60 * 1000; // 5 minutes
               
               // Show date header if this is the first message or if date changed
               const shouldShowDate = shouldShowDateHeader(msg, prevMsg);

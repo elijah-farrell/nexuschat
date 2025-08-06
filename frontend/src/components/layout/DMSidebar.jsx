@@ -136,17 +136,24 @@ const DMSidebar = React.memo(({
     // This will trigger a re-render and update unread badges for DMs
   }, [notifications.unreadMessages]);
 
+  const [confirmDM, setConfirmDM] = useState(null);
+
   const handleAddDM = async (friend) => {
-    if (!token) return;
+    // Show confirmation inline
+    setConfirmDM(friend);
+  };
+
+  const confirmCreateDM = async () => {
+    if (!token || !confirmDM) return;
     
     try {
       // Get or create DM conversation
-              const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/users/${friend.id}/dm`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/users/${confirmDM.id}/dm`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
       
       if (response.ok) {
         const data = await response.json();
@@ -160,7 +167,12 @@ const DMSidebar = React.memo(({
       console.error('Error creating DM:', error);
     }
     
+    setConfirmDM(null);
     setAddDMDialog(false);
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmDM(null);
   };
 
   const handleGroupCreated = (groupDM) => {
@@ -449,10 +461,13 @@ const DMSidebar = React.memo(({
           </Fab>
         </Box>
 
-        {/* Add DM Dialog (Friends List) */}
+        {/* Add DM Dialog (Friends List or Confirmation) */}
         <Dialog 
           open={addDMDialog} 
-          onClose={() => setAddDMDialog(false)} 
+          onClose={() => {
+            setAddDMDialog(false);
+            setConfirmDM(null);
+          }} 
           maxWidth="xs" 
           fullWidth
           PaperProps={{
@@ -462,48 +477,88 @@ const DMSidebar = React.memo(({
             }
           }}
         >
-          <DialogTitle>Start a Direct Message</DialogTitle>
-          <DialogContent>
-            <Box sx={{ mb: 2 }}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<GroupIcon />}
-                onClick={() => {
-                  setAddDMDialog(false);
-                  setShowGroupCreator(true);
-                }}
-                sx={{ mb: 1 }}
-              >
-                Create Group DM
-              </Button>
-              <Divider sx={{ my: 1 }} />
-            </Box>
-            
-            {friends.length === 0 ? (
-              <Typography color="text.secondary">No friends to DM yet.</Typography>
-            ) : (
-              <List>
-                {friends.map(friend => (
-                  <ListItem 
-                    key={friend.id} 
-                    onClick={() => handleAddDM(friend)}
-                    sx={{ cursor: 'pointer' }}
+          {!confirmDM ? (
+            // Friends List View
+            <>
+              <DialogTitle>Start a Direct Message</DialogTitle>
+              <DialogContent>
+                <Box sx={{ mb: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<GroupIcon />}
+                    onClick={() => {
+                      setAddDMDialog(false);
+                      setShowGroupCreator(true);
+                    }}
+                    sx={{ mb: 1 }}
                   >
-                    <ListItemAvatar>
-                      <Avatar src={getProfilePictureUrl(friend.profile_picture)}>
-                        {getAvatarInitial(friend.username, friend.name)}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText primary={friend.name || friend.username} />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setAddDMDialog(false)}>Cancel</Button>
-          </DialogActions>
+                    Create Group DM
+                  </Button>
+                  <Divider sx={{ my: 1 }} />
+                </Box>
+                
+                {friends.length === 0 ? (
+                  <Typography color="text.secondary">No friends to DM yet.</Typography>
+                ) : (
+                  <List>
+                    {friends.map(friend => (
+                      <ListItem 
+                        key={friend.id} 
+                        onClick={() => handleAddDM(friend)}
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <ListItemAvatar>
+                          <Avatar src={getProfilePictureUrl(friend.profile_picture)}>
+                            {getAvatarInitial(friend.username, friend.name)}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText primary={friend.name || friend.username} />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setAddDMDialog(false)}>Cancel</Button>
+              </DialogActions>
+            </>
+          ) : (
+            // Confirmation View
+            <>
+              <DialogTitle>Start Direct Message?</DialogTitle>
+              <DialogContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Avatar src={getProfilePictureUrl(confirmDM?.profile_picture)}>
+                    {getAvatarInitial(confirmDM?.username, confirmDM?.name)}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6">
+                      {confirmDM?.name || confirmDM?.username}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Start a private conversation
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  This will create a new direct message conversation with {confirmDM?.name || confirmDM?.username}.
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCancelConfirm}>
+                  Back
+                </Button>
+                <Button 
+                  onClick={confirmCreateDM}
+                  variant="contained"
+                  color="primary"
+                >
+                  Start DM
+                </Button>
+              </DialogActions>
+            </>
+          )}
         </Dialog>
 
         {/* Group DM Creator */}
@@ -512,6 +567,7 @@ const DMSidebar = React.memo(({
           onClose={() => setShowGroupCreator(false)}
           onGroupCreated={handleGroupCreated}
         />
+
 
 
       </Box>

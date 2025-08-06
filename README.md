@@ -32,7 +32,36 @@ This project is designed to be **completely free** to deploy and use:
 
 ## 📱 Screenshots
 
-*[Add screenshots of your app here]*
+### 🏠 Homepage & Authentication
+![Initial Homepage](images/initial_homepage.png)
+*Clean and modern homepage with user-friendly navigation*
+
+![Login Page](images/login_page.png)
+*Secure login interface with elegant design*
+
+![Register Username](images/register_username.png)
+*User registration with username validation*
+
+![Register Password](images/register_password.png)
+*Password creation with security features*
+
+### 👥 Social Features
+![Friends Page](images/friends_page.png)
+*Comprehensive friends management system*
+
+![View Friends Profile](images/view_friends_profile.png)
+*Detailed user profiles with status information*
+
+### 💬 Messaging Interface
+![DM Sidebar & Chat Area](images/dm_sidebar_chat_area.png)
+*Real-time messaging with sidebar navigation*
+
+### ⚙️ Settings & Customization
+![Settings Page](images/settings-page.png)
+*Comprehensive settings and preferences*
+
+![Edit Profile Personalization](images/edit_profile_personalization.jpeg)
+*Profile customization with personalization options*
 
 ## 📄 License
 

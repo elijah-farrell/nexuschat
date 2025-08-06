@@ -101,17 +101,21 @@ const getDMMessages = async (req, res) => {
     ORDER BY m.created_at ASC
   `, [dmId]);
 
-  // Convert timestamps to local time
-  for (const message of messagesResult.rows) {
-    if (message.created_at) {
-      const utcDate = new Date(message.created_at + ' UTC');
-      message.created_at = utcDate.toISOString();
+      // Convert Date objects to ISO strings to send exact UTC timestamps
+    for (const message of messagesResult.rows) {
+      if (message.created_at) {
+        // Ensure we're working with UTC timestamps
+        const utcDate = new Date(message.created_at);
+        message.created_at = utcDate.toISOString();
+      }
+      if (message.updated_at) {
+        // Ensure we're working with UTC timestamps
+        const utcDate = new Date(message.updated_at);
+        message.updated_at = utcDate.toISOString();
+      }
     }
-    if (message.updated_at) {
-      const utcDate = new Date(message.updated_at + ' UTC');
-      message.updated_at = utcDate.toISOString();
-    }
-  }
+
+  // Send exact UTC timestamps - frontend will convert to local timezone
   res.json({ success: true, messages: messagesResult.rows });
 };
 
@@ -122,7 +126,7 @@ const getOrCreateDM = async (req, res) => {
   
   try {
     // Check if DM already exists between these two users
-    const existing = query(`
+    const existing = await query(`
       SELECT dc.id FROM dm_conversations dc
       INNER JOIN dm_members m1 ON dc.id = m1.dm_id
       INNER JOIN dm_members m2 ON dc.id = m2.dm_id
@@ -131,17 +135,21 @@ const getOrCreateDM = async (req, res) => {
     
     let dmId;
     let isNewDM = false;
-    if (existing && existing.id) {
+    if (existing.rows.length > 0) {
       // DM already exists
-      dmId = existing.id;
+      dmId = existing.rows[0].id;
     } else {
-      // Create new DM
-      const result = query('INSERT INTO dm_conversations (type, created_by) VALUES (\'dm\', $1)', [userId]);
-      dmId = result.lastInsertRowid;
+          // Create new DM
+    const result = await query('INSERT INTO dm_conversations (type, created_by) VALUES (\'dm\', $1) RETURNING id, created_at', [userId]);
+    dmId = result.rows[0].id;
+    
+    // Debug: Log what was actually stored
+    console.log('DM created - stored timestamp:', result.rows[0].created_at);
+    console.log('DM created - current time:', new Date().toISOString());
       
       // Add both users to the DM
-      query('INSERT INTO dm_members (dm_id, user_id) VALUES ($1, $2)', [dmId, userId]);
-      query('INSERT INTO dm_members (dm_id, user_id) VALUES ($1, $2)', [dmId, otherUserId]);
+      await query('INSERT INTO dm_members (dm_id, user_id) VALUES ($1, $2)', [dmId, userId]);
+      await query('INSERT INTO dm_members (dm_id, user_id) VALUES ($1, $2)', [dmId, otherUserId]);
       isNewDM = true;
     }
     
@@ -169,54 +177,58 @@ const sendDMMessage = async (req, res) => {
     }
 
     // Check if user is member of this DM conversation
-    const membership = query(
+    const membership = await query(
       'SELECT 1 FROM dm_members WHERE dm_id = $1 AND user_id = $2',
       [dmId, senderId]
     );
 
-    if (!membership) {
+    if (membership.rows.length === 0) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const result = query(
-      'INSERT INTO dm_messages (dm_id, sender_id, content, message_type) VALUES ($1, $2, $3, $4)',
+    const result = await query(
+      'INSERT INTO dm_messages (dm_id, sender_id, content, message_type) VALUES ($1, $2, $3, $4) RETURNING id',
       [dmId, senderId, content.trim(), messageType]
     );
 
     // Get the created message with user info
-    const messages = query(`
+    const messages = await query(`
       SELECT dm.id, dm.dm_id, dm.sender_id, dm.content, dm.message_type, dm.is_read, 
              dm.created_at, dm.updated_at,
              u.username, u.name, u.profile_picture
       FROM dm_messages dm
       INNER JOIN users u ON dm.sender_id = u.id
       WHERE dm.id = $1
-    `, [result.lastInsertRowid]);
+    `, [result.rows[0].id]);
 
-    // Convert timestamps to local time
-    for (const message of messages) {
+    // Convert Date objects to ISO strings to send exact UTC timestamps
+    for (const message of messages.rows) {
       if (message.created_at) {
-        const utcDate = new Date(message.created_at + ' UTC');
+        // Ensure we're working with UTC timestamps
+        const utcDate = new Date(message.created_at);
         message.created_at = utcDate.toISOString();
       }
       if (message.updated_at) {
-        const utcDate = new Date(message.updated_at + ' UTC');
+        // Ensure we're working with UTC timestamps
+        const utcDate = new Date(message.updated_at);
         message.updated_at = utcDate.toISOString();
       }
     }
+
+    // Send exact UTC timestamps - frontend will convert to local timezone
 
     // Emit the new message to all users in the DM
     if (req.io) {
       req.io.to(`dm_${dmId}`).emit('new_message', {
         dm_id: dmId,
-        message: messages
+        message: messages.rows[0]
       });
     }
 
     res.status(201).json({
       success: true,
       message: 'Message sent successfully',
-      message: messages
+      message: messages.rows[0]
     });
   } catch (error) {
     console.error('Send DM message error:', error);
@@ -579,17 +591,21 @@ const getEnhancedDMs = async (req, res) => {
       ORDER BY ((SELECT dm.created_at FROM dm_messages dm WHERE dm.dm_id = dc.id ORDER BY dm.created_at DESC LIMIT 1) IS NULL), (SELECT dm.created_at FROM dm_messages dm WHERE dm.dm_id = dc.id ORDER BY dm.created_at DESC LIMIT 1) DESC, dc.created_at DESC
     `, [currentUserId, currentUserId, currentUserId, currentUserId, currentUserId, currentUserId, currentUserId]);
 
-    // Convert timestamps to local time after querying
+    // Convert Date objects to ISO strings to send exact UTC timestamps
     for (const dm of dmsResult.rows) {
       if (dm.created_at) {
-        const utcDate = new Date(dm.created_at + ' UTC');
+        // Ensure we're working with UTC timestamps
+        const utcDate = new Date(dm.created_at);
         dm.created_at = utcDate.toISOString();
       }
       if (dm.last_message_time) {
-        const utcDate = new Date(dm.last_message_time + ' UTC');
+        // Ensure we're working with UTC timestamps
+        const utcDate = new Date(dm.last_message_time);
         dm.last_message_time = utcDate.toISOString();
       }
     }
+
+    // Send exact UTC timestamps - frontend will convert to local timezone
 
     // Attach members array to each DM
     for (const dm of dmsResult.rows) {

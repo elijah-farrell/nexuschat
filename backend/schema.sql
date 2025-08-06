@@ -11,8 +11,8 @@ CREATE TABLE users (
   profile_picture TEXT,
   banner_color VARCHAR(7) DEFAULT '#5865F2',
   status VARCHAR(20) DEFAULT 'offline' CHECK (status IN ('online', 'offline', 'away', 'dnd')),
-  last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  last_seen TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- DM conversations table (for 1-on-1 and group DMs)
@@ -21,7 +21,7 @@ CREATE TABLE dm_conversations (
   type VARCHAR(10) NOT NULL DEFAULT 'dm' CHECK (type IN ('dm', 'group')),
   name VARCHAR(100), -- for group DM names
   created_by INTEGER,    -- user who created the group DM
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
@@ -29,7 +29,7 @@ CREATE TABLE dm_conversations (
 CREATE TABLE dm_members (
   dm_id INTEGER NOT NULL,
   user_id INTEGER NOT NULL,
-  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (dm_id, user_id),
   FOREIGN KEY (dm_id) REFERENCES dm_conversations(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -44,8 +44,8 @@ CREATE TABLE dm_messages (
   message_type VARCHAR(10) DEFAULT 'text' CHECK (message_type IN ('text', 'file', 'image', 'embed')),
   file_url TEXT,
   is_read BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (dm_id) REFERENCES dm_conversations(id) ON DELETE CASCADE,
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -55,7 +55,7 @@ CREATE TABLE friends (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL,
   friend_id INTEGER NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (user_id, friend_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
@@ -67,8 +67,8 @@ CREATE TABLE friend_requests (
   sender_id INTEGER NOT NULL,
   recipient_id INTEGER NOT NULL,
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (sender_id, recipient_id),
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
@@ -94,7 +94,7 @@ CREATE INDEX idx_friend_requests_status ON friend_requests(status);
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
     RETURN NEW;
 END;
 $$ language 'plpgsql';

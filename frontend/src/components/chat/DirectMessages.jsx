@@ -199,7 +199,17 @@ const DirectMessages = React.memo(({ selectedDirectMessage, onBack }) => {
   };
 
   const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
+    if (!timestamp) return 'Unknown';
+    
+    // Parse the timestamp and convert to local time
+    let date;
+    if (typeof timestamp === 'string') {
+      // Backend now sends proper UTC timestamps with Z
+      date = new Date(timestamp);
+    } else {
+      date = new Date(timestamp);
+    }
+    
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
 

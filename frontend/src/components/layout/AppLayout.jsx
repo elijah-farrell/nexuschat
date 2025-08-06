@@ -7,7 +7,7 @@ import Friends from '../../pages/Friends';
 import Home from '../../pages/Home';
 import Chat from '../../pages/Chat';
 import Settings from '../../pages/Settings';
-import Servers from '../../pages/Servers';
+
 import UserProfile from '../user/UserProfile';
 import ViewProfile from '../user/ViewProfile';
 import { useSocket } from '../../contexts/SocketContext';
@@ -76,21 +76,17 @@ const AppLayout = ({ mode, setMode }) => {
   const [selectedChannel, setSelectedChannel] = useState(() => {
     // Restore selected channel from localStorage
     const savedChannel = localStorage.getItem('nexuschat-selected-channel');
-    return savedChannel ? JSON.parse(savedChannel) : null;
+    return savedChannel && savedChannel !== 'null' && savedChannel !== 'undefined' ? JSON.parse(savedChannel) : null;
   });
   const [selectedDirectMessage, setSelectedDirectMessage] = useState(() => {
     // Restore selected direct message from localStorage
     const savedDM = localStorage.getItem('nexuschat-selected-dm');
-    return savedDM ? JSON.parse(savedDM) : null;
+    return savedDM && savedDM !== 'null' && savedDM !== 'undefined' ? JSON.parse(savedDM) : null;
   });
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showViewProfile, setShowViewProfile] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState(null);
-  const [selectedServer, setSelectedServer] = useState(() => {
-    // Restore selected server from localStorage
-    const savedServer = localStorage.getItem('nexuschat-selected-server');
-    return savedServer ? JSON.parse(savedServer) : null;
-  });
+
   const [showDMSidebar, setShowDMSidebar] = useState(false);
   const [dmButtonActive, setDmButtonActive] = useState(false);
   const [dmDetails, setDmDetails] = useState(null);
@@ -145,9 +141,7 @@ const AppLayout = ({ mode, setMode }) => {
     localStorage.setItem('nexuschat-selected-dm', JSON.stringify(selectedDirectMessage));
   }, [selectedDirectMessage]);
 
-  useEffect(() => {
-    localStorage.setItem('nexuschat-selected-server', JSON.stringify(selectedServer));
-  }, [selectedServer]);
+
 
   const handleSectionChange = (section) => {
     if (section === 'directs') {
@@ -218,8 +212,7 @@ const AppLayout = ({ mode, setMode }) => {
             setMode={setMode}
           />
         );
-      case 'servers':
-        return <Servers />;
+
       case 'settings':
         return <Settings mode={mode} setMode={setMode} />;
       case 'directs':
@@ -244,8 +237,6 @@ const AppLayout = ({ mode, setMode }) => {
       <MainSidebar
         activeSection={activeSection}
         onSectionChange={handleSectionChange}
-        selectedServer={selectedServer}
-        onServerSelect={setSelectedServer}
         onShowUserProfile={() => setShowUserProfile(true)}
         showDMSidebar={showDMSidebar}
         dmButtonActive={dmButtonActive}

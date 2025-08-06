@@ -60,42 +60,42 @@ const register = async (req, res) => {
     const sanitizedPassword = sanitizePassword(password);
     const sanitizedName = name ? sanitizeString(name) : null;
 
-    logger.info(`[REGISTER] Sanitized username: ${sanitizedUsername}`);
+    console.log(`[REGISTER] Sanitized username: ${sanitizedUsername}`);
 
     // Username validation
     if (sanitizedUsername.length < 3 || sanitizedUsername.length > 20) {
-      logger.warn(`[REGISTER] Username length invalid: ${sanitizedUsername.length}`);
+      console.log(`[REGISTER] Username length invalid: ${sanitizedUsername.length}`);
       return res.status(400).json({ error: 'Username must be between 3 and 20 characters' });
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(sanitizedUsername)) {
-      logger.warn(`[REGISTER] Username contains invalid characters: ${sanitizedUsername}`);
+      console.log(`[REGISTER] Username contains invalid characters: ${sanitizedUsername}`);
       return res.status(400).json({ error: 'Username can only contain letters, numbers, and underscores' });
     }
 
     if (password.length < 6) {
-      logger.warn(`[REGISTER] Password too short: ${password.length}`);
+      console.log(`[REGISTER] Password too short: ${password.length}`);
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
     if (sanitizedPassword.length > 128) {
-      logger.warn(`[REGISTER] Password too long: ${sanitizedPassword.length}`);
+      console.log(`[REGISTER] Password too long: ${sanitizedPassword.length}`);
       return res.status(400).json({ error: 'Password is too long' });
     }
 
     // Check if username already exists (case-insensitive)
-    logger.info(`[REGISTER] Checking if username exists: ${sanitizedUsername}`);
+    console.log(`[REGISTER] Checking if username exists: ${sanitizedUsername}`);
     const existingUser = await queryOne(
       'SELECT id FROM users WHERE LOWER(username) = $1',
       [sanitizedUsername.toLowerCase()]
     );
 
     if (existingUser) {
-      logger.warn(`[REGISTER] Username already exists: ${sanitizedUsername}`);
+      console.log(`[REGISTER] Username already exists: ${sanitizedUsername}`);
       return res.status(400).json({ error: 'Username already exists' });
     }
 
-    logger.info(`[REGISTER] Creating new user: ${sanitizedUsername}`);
+    console.log(`[REGISTER] Creating new user: ${sanitizedUsername}`);
     // Hash password
     const hashedPassword = await bcrypt.hash(sanitizedPassword, 10);
 
@@ -115,7 +115,7 @@ const register = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    logger.info(`[REGISTER] Registration successful for user: ${sanitizedUsername}`);
+    console.log(`[REGISTER] Registration successful for user: ${sanitizedUsername}`);
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -156,13 +156,13 @@ const register = async (req, res) => {
 // Login user
 const login = async (req, res) => {
   try {
-    logger.info(`[LOGIN] Attempt from IP: ${req.ip} - Username: ${req.body.username || 'none'}`);
+    console.log(`[LOGIN] Attempt from IP: ${req.ip} - Username: ${req.body.username || 'none'}`);
     
     const { username, password } = req.body;
 
     // Validate input
     if (!username || !password) {
-      logger.warn(`[LOGIN] Missing fields - Username: ${!!username}, Password: ${!!password}`);
+      console.log(`[LOGIN] Missing fields - Username: ${!!username}, Password: ${!!password}`);
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
@@ -170,47 +170,47 @@ const login = async (req, res) => {
     const sanitizedUsername = sanitizeUsername(username);
     const sanitizedPassword = sanitizePassword(password);
 
-    logger.info(`[LOGIN] Sanitized username: ${sanitizedUsername}`);
+    console.log(`[LOGIN] Sanitized username: ${sanitizedUsername}`);
 
     // Basic input validation
     if (sanitizedUsername.length > 50 || sanitizedPassword.length > 128) {
-      logger.warn(`[LOGIN] Input too long - Username: ${sanitizedUsername.length}, Password: ${sanitizedPassword.length}`);
+      console.log(`[LOGIN] Input too long - Username: ${sanitizedUsername.length}, Password: ${sanitizedPassword.length}`);
       return res.status(400).json({ error: 'Invalid input length' });
     }
 
     // Check if account is locked
     if (isAccountLocked(sanitizedUsername)) {
-      logger.warn(`[LOGIN] Account locked for: ${sanitizedUsername}`);
+      console.log(`[LOGIN] Account locked for: ${sanitizedUsername}`);
       return res.status(429).json({ error: 'Account temporarily locked. Please try again later.' });
     }
 
     // Find user
-    logger.info(`[LOGIN] Looking up user: ${sanitizedUsername}`);
+    console.log(`[LOGIN] Looking up user: ${sanitizedUsername}`);
     const user = await queryOne(
       'SELECT * FROM users WHERE username = $1',
       [sanitizedUsername]
     );
 
     if (!user) {
-      logger.warn(`[LOGIN] User not found: ${sanitizedUsername}`);
+      console.log(`[LOGIN] User not found: ${sanitizedUsername}`);
       recordFailedAttempt(sanitizedUsername);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    logger.info(`[LOGIN] User found, checking password for: ${sanitizedUsername}`);
+    console.log(`[LOGIN] User found, checking password for: ${sanitizedUsername}`);
     // Check password
     if (!user.password) {
-      logger.error(`[LOGIN] User has no password hash: ${sanitizedUsername}`);
+      console.error(`[LOGIN] User has no password hash: ${sanitizedUsername}`);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const isValidPassword = await bcrypt.compare(sanitizedPassword, user.password);
     if (!isValidPassword) {
-      logger.warn(`[LOGIN] Invalid password for: ${sanitizedUsername}`);
+      console.log(`[LOGIN] Invalid password for: ${sanitizedUsername}`);
       recordFailedAttempt(sanitizedUsername);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    logger.info(`[LOGIN] Password valid for: ${sanitizedUsername}`);
+    console.log(`[LOGIN] Password valid for: ${sanitizedUsername}`);
     // Clear failed attempts on successful login
     clearFailedAttempts(sanitizedUsername);
 
@@ -227,7 +227,7 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    logger.info(`[LOGIN] Login successful for: ${sanitizedUsername}`);
+    console.log(`[LOGIN] Login successful for: ${sanitizedUsername}`);
     res.json({
       success: true,
       message: 'Login successful',
@@ -243,7 +243,7 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error(`[LOGIN] Error: ${error.message}`, error);
+    console.error(`[LOGIN] Error: ${error.message}`, error);
     
     // Check if it's a database connection error
     if (error.message.includes('Database not connected')) {

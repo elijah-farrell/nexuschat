@@ -17,41 +17,31 @@ import {
 } from '@mui/material';
 import {
   Home as HomeIcon,
-  Add as AddIcon,
   Message as MessageIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   People as PeopleIcon,
-  Wifi as WifiIcon,
-  WifiOff as WifiOffIcon,
   ContentCopy as ContentCopyIcon,
   AlternateEmail as AlternateEmailIcon,
 } from '@mui/icons-material';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../contexts/AuthContext';
-import { useServers } from '../../contexts/ServerContext';
+
 import { useNotifications } from '../../contexts/NotificationContext';
 import NotificationBadge from '../ui/NotificationBadge';
 import { getProfilePictureUrl } from '../../utils/imageUtils';
 
-const ServerSidebar = ({ 
+const MainSidebar = ({ 
   activeSection,
   onSectionChange,
-  selectedServer,
-  onServerSelect,
   onShowUserProfile,
   showDMSidebar,
   dmButtonActive
 }) => {
   const { user, logout } = useAuth();
-  const { servers, loading, createServer } = useServers();
   const { notifications, clearNotification } = useNotifications();
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
-  const [serverName, setServerName] = useState('');
-  const [serverDescription, setServerDescription] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [backendStatus, setBackendStatus] = useState('unknown');
+
   const [copied, setCopied] = useState(false);
   // Remove local dmButtonActive state
   // Accept dmButtonActive as a prop
@@ -81,14 +71,7 @@ const ServerSidebar = ({
       color: '#57F287',
       notificationType: 'friendRequests'
     },
-    {
-      id: 'servers',
-      label: 'Servers',
-      icon: <SettingsIcon />,
-      type: 'servers',
-      color: '#9B59B6',
-      notificationType: null
-    },
+
     {
       id: 'directs',
       label: 'Direct Messages',
@@ -120,22 +103,6 @@ const ServerSidebar = ({
   //   setTimeout(() => setDmButtonActive(false), 350); // Animation duration
   // };
 
-  const handleCreateServer = async () => {
-    if (!serverName.trim()) return;
-    
-    setCreating(true);
-    try {
-      await createServer({ name: serverName, description: serverDescription });
-      setServerName('');
-      setServerDescription('');
-      setOpenCreateDialog(false);
-    } catch (error) {
-      console.error('Error creating server:', error);
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const handleLogout = () => {
     setOpenLogoutDialog(true);
   };
@@ -145,41 +112,7 @@ const ServerSidebar = ({
     logout();
   };
 
-  const getServerInitials = (name) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
-  const getServerColor = (server) => {
-    const colors = ['#5865F2', '#57F287', '#FEE75C', '#ED4245', '#EB459E', '#9B59B6'];
-    const index = server.id % colors.length;
-    return colors[index];
-  };
-
-  // Check backend status periodically
-  useEffect(() => {
-    const checkBackendStatus = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/health`, {
-          method: 'GET',
-        });
-        setBackendStatus(response.ok ? 'connected' : 'disconnected');
-      } catch (error) {
-        setBackendStatus('disconnected');
-      }
-    };
-
-    // Check immediately
-    checkBackendStatus();
-
-    // Check every 30 seconds
-    const interval = setInterval(checkBackendStatus, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <Box
@@ -243,29 +176,7 @@ const ServerSidebar = ({
         </Tooltip>
       ))}
 
-      <Divider sx={{ width: 32, borderColor: '#40444B', my: 1 }} />
 
-      {/* Create Server Button */}
-      <Tooltip title="Create Server" placement="right">
-        <IconButton
-          onClick={() => onSectionChange('servers')}
-          sx={{
-            width: 48,
-            height: 48,
-            bgcolor: 'transparent',
-            color: '#B9BBBE',
-            borderRadius: '12px',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              bgcolor: '#40444B',
-              color: '#57F287',
-              transform: 'scale(1.05)',
-            },
-          }}
-        >
-          <AddIcon />
-        </IconButton>
-      </Tooltip>
 
       {/* User Profile Section */}
       <Box sx={{ 
@@ -277,19 +188,7 @@ const ServerSidebar = ({
         gap: 1,
         width: '100%'
       }}>
-        {/* Backend Status Indicator */}
-        <Tooltip 
-          title={backendStatus === 'connected' ? 'Backend Connected' : 'Backend Disconnected'} 
-          placement="right"
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-            {backendStatus === 'connected' ? (
-              <WifiIcon sx={{ fontSize: 16, color: '#57F287' }} />
-            ) : (
-              <WifiOffIcon sx={{ fontSize: 16, color: '#ED4245' }} />
-            )}
-          </Box>
-        </Tooltip>
+
 
         {/* Username Chip below backend status, above profile picture */}
         {user?.username && (
@@ -553,16 +452,14 @@ const ServerSidebar = ({
   );
 };
 
-ServerSidebar.displayName = 'ServerSidebar';
+MainSidebar.displayName = 'MainSidebar';
 
-ServerSidebar.propTypes = {
+MainSidebar.propTypes = {
   activeSection: PropTypes.string,
   onSectionChange: PropTypes.func,
-  selectedServer: PropTypes.object,
-  onServerSelect: PropTypes.func,
   onShowUserProfile: PropTypes.func,
   showDMSidebar: PropTypes.bool,
   dmButtonActive: PropTypes.bool,
 };
 
-export default ServerSidebar; 
+export default MainSidebar; 

@@ -5,7 +5,7 @@ import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ServerProvider } from './contexts/ServerContext';
+
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/user/ProtectedRoute';
 import { SocketProvider } from './contexts/SocketContext';
@@ -166,8 +166,7 @@ const App = () => {
       <CssBaseline />
       <SocketProvider>
         <AuthProvider>
-          <ServerProvider>
-            <NotificationProvider>
+          <NotificationProvider>
               <Router 
                 future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
               >
@@ -188,7 +187,6 @@ const App = () => {
                 </AppLoading>
               </Router>
             </NotificationProvider>
-          </ServerProvider>
         </AuthProvider>
       </SocketProvider>
     </ThemeProvider>

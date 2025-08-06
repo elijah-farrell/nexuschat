@@ -28,7 +28,6 @@ import {
 } from '@mui/material';
 import {
   Message as MessageIcon,
-  Group as GroupIcon,
   PersonAdd as PersonAddIcon,
   Star as StarIcon,
   Circle as CircleIcon,
@@ -213,7 +212,16 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
 
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return 'Unknown';
-    const date = new Date(timestamp);
+    
+    // Parse the timestamp and convert to local time
+    let date;
+    if (typeof timestamp === 'string') {
+      // Backend now sends proper UTC timestamps with Z
+      date = new Date(timestamp);
+    } else {
+      date = new Date(timestamp);
+    }
+    
     const now = new Date();
     const diffInMinutes = (now - date) / (1000 * 60);
     const diffInHours = diffInMinutes / 60;
@@ -223,7 +231,15 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
     if (diffInMinutes < 60) return `${Math.floor(diffInMinutes)}m ago`;
     if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
     if (diffInDays < 7) return `${Math.floor(diffInDays)}d ago`;
-    return date.toLocaleDateString();
+    
+    // For older dates, show the date in local timezone
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const getLiveStatus = (user) => userStatuses.get(user.id || user.friend_id) || user.status || 'offline';
@@ -402,8 +418,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
   // Calculate 2 weeks in ms
   const TWO_WEEKS = 1000 * 60 * 60 * 24 * 14;
 
-  // Add a placeholder for server count
-  const SERVER_PLACEHOLDER_COUNT = 0;
+
 
   return (
     <Box sx={{ 
@@ -508,19 +523,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
               </CardContent>
             </Card>
           </Box>
-          <Box sx={{ flex: 1 }}>
-            <Card sx={{ bgcolor: 'background.paper', height: 120, display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, box-shadow 0.2s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 } }}>
-              <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 600, color: 'text.primary' }}>{SERVER_PLACEHOLDER_COUNT}</Typography>
-                    <Typography color="text.secondary">Servers</Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: '#388e3c' }}><GroupIcon /></Avatar>
-                </Box>
-              </CardContent>
-            </Card>
-          </Box>
+
           <Box sx={{ flex: 1 }}>
             <Card sx={{ bgcolor: 'background.paper', height: 120, display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, box-shadow 0.2s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 } }}>
               <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2.5 }}>
@@ -586,7 +589,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                 action={tabsRef}
               >
                 <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><PersonAddIcon />Friends</Box>} />
-                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><GroupIcon />Servers</Box>} />
+
                 <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><MessageIcon />Messages{dmActivity?.unreadSummary?.total_unread > 0 && (<Chip label={dmActivity?.unreadSummary?.total_unread} size="small" color="primary" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
               </Tabs>
               <CardContent sx={{ 
@@ -781,43 +784,10 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                     </Box>
                   </Slide>
                 )}
-                {/* Servers Tab */}
+
+                {/* Messages Tab */}
                 {activeTab === 1 && (
                   <Slide in={activeTab === 1} direction="left" timeout={300}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8 }}>
-                      <Zoom in={true} timeout={500}>
-                        <GroupIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                      </Zoom>
-                      <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
-                        Servers Coming Soon!
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary" textAlign="center" sx={{ maxWidth: 400, mb: 3 }}>
-                        We're working hard to bring you server functionality. You'll be able to create and join servers, manage channels, and collaborate with communities.
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <Chip 
-                          label="In Development" 
-                          color="primary" 
-                          variant="outlined" 
-                          clickable={false}
-                          tabIndex={-1}
-                          sx={{ cursor: 'default', pointerEvents: 'none' }}
-                        />
-                        <Chip 
-                          label="Coming Soon" 
-                          color="secondary" 
-                          variant="outlined" 
-                          clickable={false}
-                          tabIndex={-1}
-                          sx={{ cursor: 'default', pointerEvents: 'none' }}
-                        />
-                      </Box>
-                    </Box>
-                  </Slide>
-                )}
-                {/* Messages Tab */}
-                {activeTab === 2 && (
-                  <Slide in={activeTab === 2} direction="left" timeout={300}>
                     <Box>
                       {dmActivity.dmConversations.length === 0 && dmActivity.recentDMMessages.length === 0 ? (
                         <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
@@ -892,7 +862,9 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                                           ? `${item.last_message} • ${formatTimestamp(item.last_message_time)}`
                                           : (item.type === 'group' || item.type === 'group_dm')
                                             ? `(Created by @${item.created_by_username})`
-                                            : 'No messages yet'
+                                            : item.created_by_username 
+                                              ? `(Created by @${item.created_by_username})`
+                                              : 'No messages yet'
                                       }
                                       primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
                                       secondaryTypographyProps={{ variant: 'caption' }}

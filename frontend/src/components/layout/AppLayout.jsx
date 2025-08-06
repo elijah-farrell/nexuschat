@@ -208,7 +208,7 @@ const getPageTitle = (location, selectedDirectMessage, dmDetails, user) => {
   if (path.includes('/friends')) return 'Friends | NexusChat';
   if (path.includes('/chat')) return 'Chat | NexusChat';
   if (path.includes('/settings')) return 'Settings | NexusChat';
-  if (path.includes('/dashboard')) return 'Home | NexusChat';
+  if (path.includes('/dashboard')) return 'NexusChat';
   return 'NexusChat';
 };
 

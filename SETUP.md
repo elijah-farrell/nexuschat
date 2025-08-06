@@ -54,4 +54,4 @@ VITE_BACKEND_URL=http://localhost:3000
 ### Production Overrides
 - **Backend**: `NODE_ENV=production`, `FRONTEND_URL=https://your-frontend.vercel.app`
 - **Frontend**: `VITE_BACKEND_URL=https://your-backend.onrender.com`
-- **Database**: Use Session Pooler connection for Render compatibility 
+- **Database**: Use Session Pooler connection for Render IPv4 connection 

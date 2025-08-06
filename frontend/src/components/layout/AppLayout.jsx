@@ -205,9 +205,9 @@ const AppLayout = ({ mode, setMode }) => {
 // Helper function to get page title based on current URL
 const getPageTitle = (location, selectedDirectMessage, dmDetails, user) => {
   const path = location.pathname;
-  if (path.includes('/friends')) return 'Friends | NexusChat';
-  if (path.includes('/chat')) return 'Chat | NexusChat';
-  if (path.includes('/settings')) return 'Settings | NexusChat';
+  if (path.includes('/friends')) return 'Friends';
+  if (path.includes('/chat')) return 'Chat';
+  if (path.includes('/settings')) return 'Settings';
   if (path.includes('/dashboard')) return 'NexusChat';
   return 'NexusChat';
 };

@@ -68,8 +68,15 @@ const Login = ({ mode, setMode }) => {
   const [particles, setParticles] = useState([]);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const { login, user, isReady } = useAuth();
   const navigate = useNavigate();
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (isReady && user) {
+      navigate('/dashboard');
+    }
+  }, [user, isReady, navigate]);
 
   usePageTitle('Login');
 

@@ -80,8 +80,15 @@ const Register = ({ mode, setMode }) => {
   const [particles, setParticles] = useState([]);
   const [activeStep, setActiveStep] = useState(0);
   const [error, setError] = useState(''); // Add error state
-  const { register } = useAuth();
+  const { register, user, isReady } = useAuth();
   const navigate = useNavigate();
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (isReady && user) {
+      navigate('/dashboard');
+    }
+  }, [user, isReady, navigate]);
 
   usePageTitle('Register');
 

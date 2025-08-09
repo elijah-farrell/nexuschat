@@ -246,12 +246,12 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'online': return '#44b700';
-      case 'idle': return '#ff9800';
-      case 'away': return '#ff9800';
-      case 'dnd': return '#f44336';
-      case 'offline': return '#bdbdbd';
-      default: return '#bdbdbd';
+      case 'online': return '#10B981';
+      case 'idle': return '#F59E0B';
+      case 'away': return '#F59E0B';
+      case 'dnd': return '#EF4444';
+      case 'offline': return '#B9BBBE';
+      default: return '#B9BBBE';
     }
   };
 
@@ -290,11 +290,11 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
   };
 
   const getActivityLevel = (score) => {
-    if (score >= 80) return { level: 'Very Active', color: '#57F287', icon: <SparklesIcon /> };
-    if (score >= 60) return { level: 'Active', color: '#5865F2', icon: <TrendingUpIcon /> };
-    if (score >= 40) return { level: 'Moderate', color: '#FEE75C', icon: <TimelineIcon /> };
-    if (score >= 20) return { level: 'Quiet', color: '#F57C00', icon: <TrendingDownIcon /> };
-    return { level: 'Inactive', color: '#747F8D', icon: <Visibility /> };
+    if (score >= 80) return { level: 'Very Active', color: '#10B981', icon: <SparklesIcon /> };
+    if (score >= 60) return { level: 'Active', color: '#3B82F6', icon: <TrendingUpIcon /> };
+    if (score >= 40) return { level: 'Moderate', color: '#F59E0B', icon: <TimelineIcon /> };
+    if (score >= 20) return { level: 'Quiet', color: '#F59E0B', icon: <TrendingDownIcon /> };
+    return { level: 'Inactive', color: '#B9BBBE', icon: <Visibility /> };
   };
 
   // --- Modernized ListItem Styles ---

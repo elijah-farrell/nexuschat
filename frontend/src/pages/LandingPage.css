@@ -1,0 +1,106 @@
+/* Hide scrollbar for webkit browsers */
+.smooth-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure smooth scrolling */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Performance optimizations */
+.landing-container {
+  will-change: auto;
+  backface-visibility: hidden;
+}
+
+/* Clean background pattern - Telegram-inspired */
+.background-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  z-index: 2;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.06) 1px, transparent 1px);
+  background-size: 60px 60px, 100px 100px;
+  animation: patternFloat 25s ease-in-out infinite alternate;
+}
+
+@keyframes patternFloat {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  100% {
+    transform: translate(15px, -8px);
+  }
+}
+
+/* Light mode pattern */
+.background-pattern[data-mode="light"] {
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.04) 1px, transparent 1px);
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .smooth-scroll {
+    scroll-behavior: auto;
+  }
+  
+  .background-pattern {
+    animation: none !important;
+  }
+  
+  .content-section {
+    animation: none !important;
+  }
+}
+
+/* Professional grid overlay */
+.background-pattern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.01) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Subtle floating animation for the left side */
+.content-section {
+  animation: subtleFloat 8s ease-in-out infinite alternate;
+}
+
+@keyframes subtleFloat {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .content-section {
+    width: 60% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-section {
+    width: 100% !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}

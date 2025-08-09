@@ -42,8 +42,8 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
           font-family: inter;
           color: ${mode === 'dark' ? 'white' : 'black'};
           background: ${mode === 'dark' 
-            ? 'linear-gradient(135deg, #0F0F23 0%, #1E1B4B 50%, #312E81 100%)'
-            : 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%)'};
+            ? 'linear-gradient(135deg, #1E1F22 0%, #2C2F33 100%)'
+            : 'linear-gradient(135deg, #FFFFFF 0%, #F4F4F5 100%)'};
         }
 
         .content {
@@ -59,7 +59,7 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
         .website {
           padding: 15px;
           background: ${mode === 'dark' 
-            ? 'rgba(30, 27, 75, 0.9)' 
+            ? 'rgba(44, 47, 51, 0.9)' 
             : 'rgba(255, 255, 255, 0.95)'};
           backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -150,13 +150,13 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
         }
 
         .nav-btn-primary {
-          background: #6366F1;
+          background: #3B82F6;
           color: white !important;
           transition: all 0.2s ease;
         }
 
         .nav-btn-primary:hover {
-          background: #8B5CF6 !important;
+          background: #10B981 !important;
           color: white !important;
           transform: translateY(-1px);
           box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
@@ -169,14 +169,14 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
 
         .nav-btn-secondary {
           background: ${mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'white'};
-          color: #6366F1;
+          color: #3B82F6;
           border: 1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : '#d1d5db'};
           transition: all 0.2s ease;
         }
 
         .nav-btn-secondary:hover {
           background: ${mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : '#f9fafb'};
-          border-color: #6366F1;
+          border-color: #3B82F6;
           transform: translateY(-1px);
           box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
         }
@@ -207,7 +207,7 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
         }
 
         .btn-primary {
-          background: #6366F1;
+          background: #3B82F6;
           color: white;
           padding: 6px 12px;
           border-radius: 4px;
@@ -218,14 +218,14 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
         }
 
         .btn-primary:hover {
-          background: #8B5CF6;
+          background: #2563EB;
           transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
 
         .btn-secondary {
           background: ${mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'white'};
-          color: #6366F1;
+          color: #3B82F6;
           padding: 6px 12px;
           border-radius: 4px;
           text-decoration: none;
@@ -236,7 +236,7 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
         }
 
         .btn-secondary:hover {
-          border-color: #6366F1;
+          border-color: #3B82F6;
           transform: translateY(-1px);
           box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
         }
@@ -371,35 +371,16 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
       <div className="website">
         <div className="navbar">
           <div className="logo">
-            <svg width="35" height="35" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style={{ stopColor: '#6366F1', stopOpacity: 1 }} />
-                  <stop offset="100%" style={{ stopColor: '#8B5CF6', stopOpacity: 1 }} />
-                </linearGradient>
-              </defs>
-              
-              {/* Background circle with gradient */}
-              <circle cx="16" cy="16" r="15" fill="url(#heroGradient)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
-              
-              {/* Hub icon */}
-              <g transform="translate(8, 8)" fill="white">
-                {/* Center circle */}
-                <circle cx="8" cy="8" r="3" fill="white"/>
-                
-                {/* Connection lines */}
-                <rect x="7" y="2" width="2" height="4" rx="1" fill="white"/>
-                <rect x="7" y="10" width="2" height="4" rx="1" fill="white"/>
-                <rect x="2" y="7" width="4" height="2" rx="1" fill="white"/>
-                <rect x="10" y="7" width="4" height="2" rx="1" fill="white"/>
-                
-                {/* Corner dots */}
-                <circle cx="4" cy="4" r="1.5" fill="white"/>
-                <circle cx="12" cy="4" r="1.5" fill="white"/>
-                <circle cx="4" cy="12" r="1.5" fill="white"/>
-                <circle cx="12" cy="12" r="1.5" fill="white"/>
-              </g>
-            </svg>
+            <div style={{
+              width: '35px',
+              height: '35px',
+              backgroundImage: 'url(/nexuschatlogo.png)',
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              borderRadius: '8px',
+              filter: 'drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3))'
+            }} />
           </div>
           <div className="nav-menu">
             <button 
@@ -434,26 +415,47 @@ export default function NexusChatHeroPage({ mode = 'light' }) {
 
         <div id="features" className="features">
           <div className="feature">
-            <div className="feature-icon">💬</div>
+            <div className="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.5 19H8C4 19 2 17 2 13V8C2 4 4 2 8 2H16C20 2 22 4 22 8V13C22 17 20 19 16 19H15.5C15.19 19 14.89 19.15 14.7 19.4L13.2 21.4C12.54 22.28 11.46 22.28 10.8 21.4L9.3 19.4C9.14 19.18 8.77 19 8.5 19Z" stroke="#3B82F6" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15.9965 11H16.0054" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M11.9955 11H12.0045" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7.99451 11H8.00349" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <div className="feature-title">Real-time</div>
             <div className="feature-desc">Live messaging</div>
           </div>
           <div className="feature">
-            <div className="feature-icon">🔒</div>
+            <div className="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 10V8C6 5.79086 7.79086 4 10 4H14C16.2091 4 18 5.79086 18 8V10M6 10C4.89543 10 4 10.8954 4 12V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V12C20 10.8954 19.1046 10 18 10M6 10H18M12 14V16" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <div className="feature-title">Secure</div>
             <div className="feature-desc">Encrypted chats</div>
-                    </div>
+          </div>
           <div className="feature">
-            <div className="feature-icon">⚡</div>
+            <div className="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <div className="feature-title">Fast</div>
             <div className="feature-desc">Instant delivery</div>
-                    </div>
+          </div>
           <div className="feature">
-            <div className="feature-icon">🎨</div>
+            <div className="feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M5 3L6 6L9 7L6 8L5 11L4 8L1 7L4 6L5 3Z" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M19 3L20 6L23 7L20 8L19 11L18 8L15 7L18 6L19 3Z" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <div className="feature-title">Modern</div>
             <div className="feature-desc">Clean design</div>
-                  </div>
-                </div>
+          </div>
+        </div>
 
         <div id="about" className="about-section">
           <div className="about-title">About NexusChat</div>

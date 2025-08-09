@@ -15,8 +15,7 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Divider,
-  Tooltip
+  Divider
 } from '@mui/material';
 import { 
   Visibility, 
@@ -28,35 +27,60 @@ import {
   LightMode,
   CheckCircle,
   ArrowBack,
-  ArrowForward,
-  InfoOutlined
+  ArrowForward
 } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-// No particles needed on register page
+// Modern particles animation
+const useParticles = () => {
+  const [particles, setParticles] = useState([]);
 
-// NexusChat Logo component using the new logo image
+  useEffect(() => {
+    const newParticles = Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100 + '%',
+      y: Math.random() * 100 + '%',
+      size: Math.random() * 4 + 2 + 'px',
+      opacity: Math.random() * 0.5 + 0.2,
+      duration: Math.random() * 20 + 10 + 's'
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return particles;
+};
+
+// Custom Hub Icon with modern gradient
 const CustomHubIcon = ({ size = 64 }) => (
-  <Box
-    sx={{
-      width: size,
-      height: size,
-      backgroundImage: 'url(/nexuschatlogo.png)',
-      backgroundSize: 'contain',
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center',
-      borderRadius: '16px',
-      filter: 'drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3))',
-      margin: '0 auto',
-      display: 'block'
-    }}
-  />
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="registerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#3B82F6', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#10B981', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    
+    <circle cx="16" cy="16" r="15" fill="url(#registerGradient)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+    
+    <g transform="translate(8, 8)" fill="white">
+      <circle cx="8" cy="8" r="3" fill="white"/>
+      <rect x="7" y="2" width="2" height="4" rx="1" fill="white"/>
+      <rect x="7" y="10" width="2" height="4" rx="1" fill="white"/>
+      <rect x="2" y="7" width="4" height="2" rx="1" fill="white"/>
+      <rect x="10" y="7" width="4" height="2" rx="1" fill="white"/>
+      <circle cx="4" cy="4" r="1.5" fill="white"/>
+      <circle cx="12" cy="4" r="1.5" fill="white"/>
+      <circle cx="4" cy="12" r="1.5" fill="white"/>
+      <circle cx="12" cy="12" r="1.5" fill="white"/>
+    </g>
+  </svg>
 );
 
 const Register = ({ mode, setMode }) => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const particles = useParticles();
   
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -227,37 +251,6 @@ const Register = ({ mode, setMode }) => {
                     <Person sx={{ color: mode === 'dark' ? '#B9BBBE' : '#606060' }} />
                   </InputAdornment>
                 ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Tooltip 
-                      title={
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                            Username Requirements:
-                          </Typography>
-                          <Typography variant="body2" component="div">
-                            • 3-20 characters long<br/>
-                            • Letters, numbers, and underscores only<br/>
-                            • Cannot start with a number<br/>
-                            • Choose something memorable!
-                          </Typography>
-                        </Box>
-                      }
-                      arrow
-                      placement="right"
-                    >
-                      <IconButton
-                        edge="end"
-                        sx={{
-                          color: mode === 'dark' ? '#B9BBBE' : '#606060',
-                          '&:hover': { color: '#3B82F6' }
-                        }}
-                      >
-                        <InfoOutlined fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </InputAdornment>
-                )
               }}
             />
           </Box>
@@ -288,32 +281,6 @@ const Register = ({ mode, setMode }) => {
                 ),
                 endAdornment: (
                   <InputAdornment position="end">
-                    <Tooltip 
-                      title={
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                            Password Requirements:
-                          </Typography>
-                          <Typography variant="body2" component="div">
-                            • At least 6 characters long<br/>
-                            • Mix of letters and numbers recommended<br/>
-                            • Avoid common passwords<br/>
-                            • Make it unique and secure!
-                          </Typography>
-                        </Box>
-                      }
-                      arrow
-                      placement="left"
-                    >
-                      <IconButton
-                        sx={{
-                          color: mode === 'dark' ? '#B9BBBE' : '#606060',
-                          '&:hover': { color: '#3B82F6' }
-                        }}
-                      >
-                        <InfoOutlined fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
@@ -347,31 +314,6 @@ const Register = ({ mode, setMode }) => {
                 ),
                 endAdornment: (
                   <InputAdornment position="end">
-                    <Tooltip 
-                      title={
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                            Confirm Password:
-                          </Typography>
-                          <Typography variant="body2" component="div">
-                            • Must match your password exactly<br/>
-                            • Double-check for typos<br/>
-                            • This ensures you remember your password
-                          </Typography>
-                        </Box>
-                      }
-                      arrow
-                      placement="left"
-                    >
-                      <IconButton
-                        sx={{
-                          color: mode === 'dark' ? '#B9BBBE' : '#606060',
-                          '&:hover': { color: '#3B82F6' }
-                        }}
-                      >
-                        <InfoOutlined fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
                     <IconButton
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       edge="end"
@@ -422,7 +364,31 @@ const Register = ({ mode, setMode }) => {
         justifyContent: 'center'
       }}
     >
-             {/* Clean background - no particles needed */}
+      {/* Modern floating particles */}
+      {particles.map(particle => (
+        <Box
+          key={particle.id}
+          sx={{
+            position: 'absolute',
+            width: particle.size,
+            height: particle.size,
+            background: mode === 'dark' 
+              ? 'rgba(59, 130, 246, 0.1)' 
+              : 'rgba(59, 130, 246, 0.05)',
+            borderRadius: '50%',
+            left: particle.x,
+            top: particle.y,
+            opacity: particle.opacity,
+            pointerEvents: 'none',
+            zIndex: 1,
+            animation: `float ${particle.duration} ease-in-out infinite alternate`,
+            '@keyframes float': {
+              '0%': { transform: 'translateY(0px) scale(1)' },
+              '100%': { transform: 'translateY(-20px) scale(1.1)' }
+            }
+          }}
+        />
+      ))}
 
       {/* Theme toggle */}
       <IconButton
@@ -500,7 +466,7 @@ const Register = ({ mode, setMode }) => {
                   mt: 2,
                   mb: 1,
                   fontWeight: 700,
-                  background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                  background: 'linear-gradient(135deg, #3B82F6 0%, #10B981 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',

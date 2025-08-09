@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/nexuschatlogo.ico" />
+    <link rel="apple-touch-icon" href="/nexuschatlogo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="NexusChat - A modern Discord-style messaging application" />
     <meta name="keywords" content="chat, messaging, discord, real-time, communication" />
@@ -13,18 +14,18 @@
     <meta property="og:url" content="https://nexuschat.com/" />
     <meta property="og:title" content="NexusChat" />
     <meta property="og:description" content="A modern Discord-style messaging application" />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image" content="/nexuschatlogo.png" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://nexuschat.com/" />
     <meta property="twitter:title" content="NexusChat" />
     <meta property="twitter:description" content="A modern Discord-style messaging application" />
-    <meta property="twitter:image" content="/og-image.png" />
+    <meta property="twitter:image" content="/nexuschatlogo.png" />
 
     <!-- Theme Color -->
-    <meta name="theme-color" content="#5865F2" />
-    <meta name="msapplication-TileColor" content="#5865F2" />
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="msapplication-TileColor" content="#3B82F6" />
     
     <!-- Preconnect to external domains for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -45,7 +46,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, #181a20 0%, #23272f 100%);
+        background: linear-gradient(135deg, #1E1F22 0%, #2C2F33 100%);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -57,21 +58,11 @@
       .loading-logo {
         width: 80px;
         height: 80px;
-        background: linear-gradient(135deg, #5865F2 0%, #57F287 100%);
+        background: url('/nexuschatlogo.png') center/contain no-repeat;
         border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         margin-bottom: 24px;
         animation: pulse 2s infinite;
-      }
-      
-      .loading-logo::before {
-        content: "N";
-        font-size: 32px;
-        font-weight: bold;
-        color: white;
-        font-family: 'Inter', sans-serif;
+        filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3));
       }
       
       .loading-text {
@@ -92,7 +83,7 @@
         width: 40px;
         height: 40px;
         border: 3px solid #40444b;
-        border-top: 3px solid #5865F2;
+        border-top: 3px solid #3B82F6;
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin-top: 24px;

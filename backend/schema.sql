@@ -9,7 +9,7 @@ CREATE TABLE users (
   email VARCHAR(255),
   bio TEXT,
   profile_picture TEXT,
-  banner_color VARCHAR(7) DEFAULT '#5865F2',
+  banner_color VARCHAR(7) DEFAULT '#3B82F6',
   status VARCHAR(20) DEFAULT 'offline' CHECK (status IN ('online', 'offline', 'away', 'dnd')),
   last_seen TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

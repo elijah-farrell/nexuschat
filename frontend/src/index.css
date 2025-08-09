@@ -81,13 +81,13 @@ html {
 
 /* Focus styles */
 *:focus {
-  outline: 2px solid #5865F2;
+  outline: 2px solid #3B82F6;
   outline-offset: 2px;
 }
 
 /* Selection styles */
 ::selection {
-  background-color: #5865F2;
+  background-color: #3B82F6;
   color: white;
 }
 

@@ -60,7 +60,7 @@ const MainSidebar = ({
       label: 'Home',
       icon: <HomeIcon />,
       type: 'home',
-      color: '#5865F2',
+      color: '#3B82F6',
       notificationType: null
     },
     {
@@ -68,7 +68,7 @@ const MainSidebar = ({
       label: 'Friends',
       icon: <PeopleIcon />,
       type: 'friends',
-      color: '#57F287',
+      color: '#10B981',
       notificationType: 'friendRequests'
     },
 
@@ -77,7 +77,7 @@ const MainSidebar = ({
       label: 'Direct Messages',
       icon: <MessageIcon />,
       type: 'directs',
-      color: '#FEE75C',
+      color: '#F59E0B',
       notificationType: 'unreadMessages'
     }
   ];
@@ -118,8 +118,8 @@ const MainSidebar = ({
     <Box
       sx={{
         width: { xs: 60, sm: 72 },
-        bgcolor: '#2F3136',
-        borderRight: '1px solid #202225',
+        bgcolor: '#2C2F33',
+        borderRight: '1px solid #40444B',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -141,7 +141,7 @@ const MainSidebar = ({
                 width: { xs: 40, sm: 48 },
                 height: { xs: 40, sm: 48 },
                 bgcolor: activeSection === item.type ? item.color : 'transparent',
-                color: item.type === 'directs' && showDMSidebar && activeSection !== 'directs' ? '#FEE75C' : (activeSection === item.type ? 'white' : '#B9BBBE'),
+                color: item.type === 'directs' && showDMSidebar && activeSection !== 'directs' ? '#F59E0B' : (activeSection === item.type ? 'white' : '#B9BBBE'),
                 borderRadius: { xs: '8px', sm: '12px' },
                 transition: 'all 0.2s cubic-bezier(.4,2,.6,1)',
                 boxShadow: item.type === 'directs' && dmButtonActive ? '0 0 0 6px rgba(254,231,92,0.25)' : undefined,
@@ -169,7 +169,7 @@ const MainSidebar = ({
               <NotificationBadge 
                 count={notifications[item.notificationType]} 
                 size="small"
-                color={item.notificationType === 'friendRequests' ? '#ED4245' : '#5865F2'}
+                color={item.notificationType === 'friendRequests' ? '#EF4444' : '#3B82F6'}
               />
             )}
           </Box>
@@ -224,7 +224,7 @@ const MainSidebar = ({
               borderRadius: '12px',
               transition: 'all 0.2s ease',
               '&:hover': {
-                bgcolor: '#40444B',
+                                  bgcolor: '#40444B',
                 color: 'white',
                 transform: 'scale(1.05)',
               },
@@ -235,7 +235,7 @@ const MainSidebar = ({
                 sx={{
                   width: 32,
                   height: 32,
-                  bgcolor: '#5865F2',
+                  bgcolor: '#3B82F6',
                   fontSize: '0.875rem',
                   fontWeight: 'bold',
                 }}
@@ -251,11 +251,11 @@ const MainSidebar = ({
                   width: 12,
                   height: 12,
                   borderRadius: '50%',
-                  bgcolor: user?.status === 'online' ? '#57F287' : 
-                           user?.status === 'away' ? '#FEE75C' :
-                           user?.status === 'dnd' ? '#ED4245' : '#72767D',
+                  bgcolor: user?.status === 'online' ? '#10B981' : 
+                           user?.status === 'away' ? '#F59E0B' :
+                           user?.status === 'dnd' ? '#EF4444' : '#B9BBBE',
                   border: 2,
-                  borderColor: '#2F3136',
+                  borderColor: '#2C2F33',
                 }}
               />
             </Box>
@@ -270,11 +270,11 @@ const MainSidebar = ({
               width: 48,
               height: 48,
               color: activeSection === 'settings' ? 'white' : '#B9BBBE',
-              bgcolor: activeSection === 'settings' ? '#5865F2' : 'transparent',
+              bgcolor: activeSection === 'settings' ? '#3B82F6' : 'transparent',
               borderRadius: '12px',
               transition: 'all 0.2s ease',
               '&:hover': {
-                bgcolor: activeSection === 'settings' ? '#5865F2' : '#40444B',
+                bgcolor: activeSection === 'settings' ? '#2563EB' : '#40444B',
                 color: 'white',
                 transform: 'scale(1.05)',
               },
@@ -295,7 +295,7 @@ const MainSidebar = ({
               borderRadius: '12px',
               transition: 'all 0.2s ease',
               '&:hover': {
-                bgcolor: '#ED4245',
+                bgcolor: '#EF4444',
                 color: 'white',
                 transform: 'scale(1.05)',
               },
@@ -319,7 +319,7 @@ const MainSidebar = ({
             borderRadius: 3,
             minWidth: 400,
             background: (theme) => theme.palette.mode === 'dark' 
-              ? 'linear-gradient(135deg, rgba(30, 27, 75, 0.95) 0%, rgba(45, 42, 85, 0.95) 100%)'
+              ? 'linear-gradient(135deg, rgba(44, 47, 51, 0.95) 0%, rgba(30, 31, 34, 0.95) 100%)'
               : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
             backdropFilter: 'blur(20px)',
             border: (theme) => theme.palette.mode === 'dark'
@@ -346,7 +346,7 @@ const MainSidebar = ({
             textAlign: 'center',
             fontWeight: 700,
             fontSize: '1.5rem',
-            background: 'linear-gradient(135deg, #ED4245 0%, #DC2626 100%)',
+            background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -364,7 +364,7 @@ const MainSidebar = ({
                 width: 64,
                 height: 64,
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #ED4245 0%, #DC2626 100%)',
+                background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -430,7 +430,7 @@ const MainSidebar = ({
               py: 1.5,
               px: 3,
               borderRadius: 2,
-              background: 'linear-gradient(135deg, #ED4245 0%, #DC2626 100%)',
+              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
               fontWeight: 600,
               boxShadow: '0 4px 14px rgba(237, 66, 69, 0.4)',
               '&:hover': {

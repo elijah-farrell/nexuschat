@@ -63,7 +63,7 @@ const AppLoading = ({ children }) => {
             alignItems: 'center', bgcolor: 'background.default', zIndex: 9999, gap: 3
           }}
         >
-          <CircularProgress size={60} sx={{ color: '#5865F2', '& .MuiCircularProgress-circle': { strokeLinecap: 'round', } }} />
+          <CircularProgress size={60} sx={{ color: '#3B82F6', '& .MuiCircularProgress-circle': { strokeLinecap: 'round', } }} />
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontWeight: 600 }}>
               Connecting to NexusChat...
@@ -115,20 +115,20 @@ const App = () => {
     palette: {
       mode,
       background: {
-        default: mode === 'dark' ? '#181a20' : '#f8fafc',
-        paper: mode === 'dark' ? '#23272f' : '#fff',
+        default: mode === 'dark' ? '#1E1F22' : '#FFFFFF',
+        paper: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
       },
       primary: {
-        main: '#5865F2',
+        main: '#3B82F6',
       },
       secondary: {
-        main: '#57F287',
+        main: '#10B981',
       },
       text: {
-        primary: mode === 'dark' ? '#ffffff' : '#1a1a1a',
-        secondary: mode === 'dark' ? '#b9bbbe' : '#6b7280',
+        primary: mode === 'dark' ? '#FFFFFF' : '#1F1F1F',
+        secondary: mode === 'dark' ? '#B9BBBE' : '#606060',
       },
-      divider: mode === 'dark' ? '#40444b' : '#e5e7eb',
+      divider: mode === 'dark' ? '#40444B' : '#E4E4E7',
     },
     shape: { borderRadius: 10 },
     breakpoints: {
@@ -144,23 +144,23 @@ const App = () => {
       MuiAppBar: {
         styleOverrides: {
           root: {
-            backgroundColor: mode === 'dark' ? '#23272f' : '#ffffff',
+            backgroundColor: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
           },
         },
       },
       MuiDrawer: {
         styleOverrides: {
           paper: {
-            backgroundColor: mode === 'dark' ? '#2f3136' : '#f9fafb',
-            borderRight: `1px solid ${mode === 'dark' ? '#40444b' : '#e5e7eb'}`,
+            backgroundColor: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
+            borderRight: `1px solid ${mode === 'dark' ? '#40444B' : '#E4E4E7'}`,
           },
         },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            backgroundColor: mode === 'dark' ? '#2f3136' : '#ffffff',
-            border: `1px solid ${mode === 'dark' ? '#40444b' : '#e5e7eb'}`,
+            backgroundColor: mode === 'dark' ? '#2C2F33' : '#FFFFFF',
+            border: `1px solid ${mode === 'dark' ? '#40444B' : '#E4E4E7'}`,
           },
         },
       },

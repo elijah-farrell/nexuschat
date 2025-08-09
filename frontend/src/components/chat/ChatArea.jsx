@@ -56,12 +56,12 @@ const ChatArea = React.memo(({
   const getLiveStatus = (user) => userStatuses.get(user.id) || user.status || 'offline';
   const getStatusColor = (status) => {
     switch (status) {
-      case 'online': return '#44b700';
-      case 'idle': return '#ff9800';
-      case 'away': return '#ff9800';
-      case 'dnd': return '#f44336';
-      case 'offline': return '#bdbdbd';
-      default: return '#bdbdbd';
+      case 'online': return '#10B981'; // Modern green
+      case 'idle': return '#F59E0B'; // Warm amber
+      case 'away': return '#F59E0B'; // Warm amber
+      case 'dnd': return '#EF4444'; // Clean red
+      case 'offline': return '#94A3B8'; // Medium gray
+      default: return '#94A3B8'; // Medium gray
     }
   };
   const getStatusText = (status) => {

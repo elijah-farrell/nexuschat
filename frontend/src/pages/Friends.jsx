@@ -907,8 +907,8 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
           p: { xs: 1.5, sm: 2, md: 3 },
           gap: { xs: 1.5, sm: 0 },
           borderRadius: 2,
-          background: 'linear-gradient(135deg, rgba(88, 101, 242, 0.1) 0%, rgba(87, 242, 135, 0.1) 100%)',
-          border: '1px solid rgba(88, 101, 242, 0.2)',
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(87, 242, 135, 0.1) 100%)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
           position: 'relative',
           overflow: 'hidden',
           maxWidth: { xs: '100%', sm: 600, md: 700 }, // Added xl
@@ -920,7 +920,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
             left: 0,
             right: 0,
             height: '2px',
-            background: 'linear-gradient(90deg, #5865F2 0%, #57F287 100%)',
+            background: 'linear-gradient(90deg, #3B82F6 0%, #57F287 100%)',
           }
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -928,18 +928,18 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
               width: 48,
               height: 48,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #5865F2 0%, #57F287 100%)',
+              background: 'linear-gradient(135deg, #3B82F6 0%, #57F287 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(88, 101, 242, 0.3)',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
             }}>
               <PeopleIcon sx={{ color: 'white', fontSize: 24 }} />
             </Box>
             <Box>
               <Typography variant="h4" component="h1" sx={{ 
                 fontWeight: 'bold',
-                background: 'linear-gradient(135deg, #5865F2 0%, #57F287 100%)',
+                background: 'linear-gradient(135deg, #3B82F6 0%, #57F287 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -956,17 +956,17 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
             startIcon={<PersonAddIcon />}
             onClick={() => setAddFriendDialog(true)}
             sx={{
-              background: 'linear-gradient(135deg, #5865F2 0%, #4752C4 100%)',
+              background: 'linear-gradient(135deg, #3B82F6 0%, #4752C4 100%)',
               borderRadius: 2,
               px: { xs: 2, sm: 3 },
               py: { xs: 1, sm: 1.5 },
               textTransform: 'none',
               fontWeight: 600,
               fontSize: { xs: '0.875rem', sm: '1rem' },
-              boxShadow: '0 4px 12px rgba(88, 101, 242, 0.3)',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
               '&:hover': {
                 background: 'linear-gradient(135deg, #4752C4 0%, #3C45A5 100%)',
-                boxShadow: '0 6px 16px rgba(88, 101, 242, 0.4)',
+                boxShadow: '0 6px 16px rgba(59, 130, 246, 0.4)',
                 transform: 'translateY(-1px)',
               },
               '&:active': {
@@ -1000,7 +1000,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
           backdropFilter: 'blur(10px)',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <SearchIcon sx={{ color: '#5865F2', fontSize: 24 }} />
+            <SearchIcon sx={{ color: '#3B82F6', fontSize: 24 }} />
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Find People
             </Typography>
@@ -1027,10 +1027,10 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                     borderColor: 'rgba(255, 255, 255, 0.2)',
                   },
                   '&:hover fieldset': {
-                    borderColor: '#5865F2',
+                    borderColor: '#3B82F6',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#5865F2',
+                    borderColor: '#3B82F6',
                   },
                 }
               }}
@@ -1097,11 +1097,11 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                 color: 'text.secondary',
                 padding: { xs: '6px 8px', sm: '8px 12px', md: '8px 12px', lg: '12px 16px' }, // tighter at md and below
                 '&.Mui-selected': {
-                  color: '#5865F2',
+                  color: '#3B82F6',
                 },
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#5865F2',
+                backgroundColor: '#3B82F6',
                 height: 3,
                 transition: 'all 0.3s ease',
               },
@@ -1233,7 +1233,7 @@ const Friends = ({ onSelectDirectMessage, onShowUserProfile }) => {
                         <ellipse cx="90" cy="150" rx="70" ry="18" fill="#E3E9F7" />
                         <rect x="50" y="60" width="80" height="40" rx="16" fill="#57F287" />
                         <rect x="65" y="75" width="50" height="10" rx="5" fill="#fff" opacity="0.8" />
-                        <circle cx="70" cy="70" r="7" fill="#5865F2" />
+                        <circle cx="70" cy="70" r="7" fill="#3B82F6" />
                         <circle cx="110" cy="70" r="7" fill="#FEE75C" />
                         <rect x="80" y="100" width="20" height="8" rx="4" fill="#ED4245" />
                       </svg>

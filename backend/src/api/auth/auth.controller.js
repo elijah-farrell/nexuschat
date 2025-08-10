@@ -597,9 +597,9 @@ const getUserStats = async (req, res) => {
       [userId]
     );
 
-    // Get friend count
+    // Get friend count (count where user is either user_id or friend_id)
     const friendCount = await query(
-      'SELECT COUNT(*) as count FROM friends WHERE user_id = $1',
+      'SELECT COUNT(*) as count FROM friends WHERE user_id = $1 OR friend_id = $1',
       [userId]
     );
 

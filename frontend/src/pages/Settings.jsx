@@ -170,7 +170,12 @@ const Settings = ({ mode, setMode }) => {
   };
 
   const StatCard = ({ title, value, icon, color = 'primary' }) => (
-    <Card sx={{ height: '100%', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-2px)' } }}>
+    <Card sx={{ 
+      height: '100%', 
+      transition: 'transform 0.2s', 
+      '&:hover': { transform: 'translateY(-2px)' },
+      bgcolor: 'background.paper'
+    }}>
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box>
@@ -196,7 +201,11 @@ const Settings = ({ mode, setMode }) => {
       </Typography>
 
       {/* Username Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ 
+        p: 3, 
+        mb: 3,
+        bgcolor: 'background.paper'
+      }}>
         <Box display="flex" alignItems="center" mb={2}>
           <Person sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">Username</Typography>
@@ -246,7 +255,11 @@ const Settings = ({ mode, setMode }) => {
       </Paper>
 
       {/* Theme Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ 
+        p: 3, 
+        mb: 3,
+        bgcolor: 'background.paper'
+      }}>
         <Box display="flex" alignItems="center" mb={2}>
           <Palette sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">Theme</Typography>
@@ -270,7 +283,11 @@ const Settings = ({ mode, setMode }) => {
       </Paper>
 
       {/* Stats Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ 
+        p: 3, 
+        mb: 3,
+        bgcolor: 'background.paper'
+      }}>
         <Box display="flex" alignItems="center" mb={2}>
           <Analytics sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">Account Overview</Typography>
@@ -319,7 +336,11 @@ const Settings = ({ mode, setMode }) => {
       </Paper>
 
       {/* Danger Zone */}
-      <Paper sx={{ p: 3, border: '2px solid #f44336' }}>
+      <Paper sx={{ 
+        p: 3, 
+        border: '2px solid #f44336',
+        bgcolor: 'background.paper'
+      }}>
         <Box display="flex" alignItems="center" mb={2}>
           <Warning sx={{ mr: 1, color: '#f44336' }} />
           <Typography variant="h6" color="#f44336">Danger Zone</Typography>

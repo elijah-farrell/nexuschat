@@ -9,21 +9,32 @@ import { a } from '@react-spring/three'
 // but it can also handle 3rd–party objs, just wrap them in "a".
 const AnimatedMaterial = a(MeshDistortMaterial)
 
-export default function Scene({ setBg }) {
+export default function Scene({ setBg, mode, setMode }) {
   const sphere = useRef()
   const light = useRef()
-  const [mode, setMode] = useState(false)
   const [down, setDown] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [cursorClose, setCursorClose] = useState(false)
 
-  // Change cursor on hovered state
+  // Change cursor on hovered state (only on landing page)
   useEffect(() => {
-    document.body.style.cursor = hovered
-      ? 'none'
-      : `url('data:image/svg+xml;base64,${btoa(
-          '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="10" fill="#E8B059"/></svg>'
-        )}'), auto`
+    // Only apply custom cursor if we're on the landing page
+    if (document.body.classList.contains('landing-page')) {
+      document.body.style.cursor = hovered
+        ? 'none'
+        : `url('data:image/svg+xml;base64,${btoa(
+            '<svg width="32" height="32" viewBox="0 0 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="10" fill="#3B82F6"/></svg>'
+          )}'), auto`
+    }
   }, [hovered])
+
+  // Update background colors when theme mode changes
+  useEffect(() => {
+    setBg.start({ 
+      background: mode === 'dark' ? '#1E1F22' : '#FFFFFF', 
+      fill: mode === 'dark' ? '#FFFFFF' : '#1F1F1F' 
+    })
+  }, [mode, setBg])
 
   // Make the bubble float and follow the mouse
   // This is frame-based animation, useFrame subscribes the component to the render-loop
@@ -37,6 +48,10 @@ export default function Scene({ setBg }) {
         Math.sin(state.clock.elapsedTime / 1.5) / 6 + (hovered ? state.mouse.y / 2 : 0),
         0.2
       )
+      
+      // Check if cursor is close to sphere (within a certain distance)
+      const distance = Math.sqrt(state.mouse.x * state.mouse.x + state.mouse.y * state.mouse.y)
+      setCursorClose(distance < 0.3 && !hovered) // Close but not hovering
     }
   })
 
@@ -45,10 +60,10 @@ export default function Scene({ setBg }) {
   const [{ wobble, coat, color, ambient, env }] = useSpring(
     {
       wobble: down ? 1.2 : hovered ? 1.05 : 1,
-      coat: mode && !hovered ? 0.04 : 1,
-      ambient: mode && !hovered ? 1.5 : 0.5,
-      env: mode && !hovered ? 0.4 : 1,
-      color: hovered ? '#E8B059' : mode ? '#202020' : 'white',
+      coat: mode === 'dark' && !hovered ? 0.04 : 1,
+      ambient: mode === 'dark' && !hovered ? 1.5 : 0.5,
+      env: mode === 'dark' && !hovered ? 0.4 : 1,
+      color: hovered ? '#3B82F6' : mode === 'dark' ? '#1E1F22' : 'white',
       config: (n) => n === 'wobble' && hovered && { mass: 2, tension: 1000, friction: 10 }
     },
     [mode, hovered, down]
@@ -58,7 +73,7 @@ export default function Scene({ setBg }) {
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={75}>
         <a.ambientLight intensity={ambient} />
-        <a.pointLight ref={light} position-z={-15} intensity={env} color="#F8C069" />
+        <a.pointLight ref={light} position-z={-15} intensity={env} color={cursorClose ? "#3B82F6" : "#3B82F6"} />
       </PerspectiveCamera>
       <Suspense fallback={null}>
         <a.mesh
@@ -69,9 +84,8 @@ export default function Scene({ setBg }) {
           onPointerDown={() => setDown(true)}
           onPointerUp={() => {
             setDown(false)
-            // Toggle mode between dark and bright
-            setMode(!mode)
-            setBg({ background: !mode ? '#202020' : '#f0f0f0', fill: !mode ? '#f0f0f0' : '#202020' })
+            // Toggle the app's theme
+            setMode(mode === 'dark' ? 'light' : 'dark')
           }}>
           <sphereBufferGeometry args={[1, 64, 64]} />
           <AnimatedMaterial color={color} envMapIntensity={env} clearcoat={coat} clearcoatRoughness={0} metalness={0.1} />

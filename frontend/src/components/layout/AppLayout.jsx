@@ -4,7 +4,6 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import MainSidebar from './MainSidebar';
 import DMSidebar from './DMSidebar';
-
 import UserProfile from '../user/UserProfile';
 import ViewProfile from '../user/ViewProfile';
 import { useSocket } from '../../contexts/SocketContext';
@@ -120,9 +119,7 @@ const AppLayout = ({ mode, setMode }) => {
           navigate('/dashboard');
       }
       
-      if (section !== 'friends' && section !== 'home') {
-        setShowDMSidebar(false);
-      }
+      // Allow DMSidebar to stay open on all pages for consistency
       // Clear selected DM when switching to Home or Friends
       if (section === 'home' || section === 'friends') {
         setSelectedDirectMessage(null);
@@ -133,22 +130,22 @@ const AppLayout = ({ mode, setMode }) => {
   const handleSelectDirectMessage = (dmId) => {
     setSelectedDirectMessage(dmId);
     setShowDMSidebar(true);
-    setActiveSection('directs');
+    navigate('/dashboard/chat');
     setDmButtonActive(true);
     setTimeout(() => setDmButtonActive(false), 350);
   };
 
   const handleCloseDMSidebar = () => {
     setShowDMSidebar(false);
-    // On mobile, go back to home when closing DM sidebar
+    // On mobile, go back to dashboard when closing DM sidebar
     if (window.innerWidth < 600) {
-      setActiveSection('home');
+      navigate('/dashboard');
     }
   };
 
   // Use React Router's Outlet to render nested routes
   const renderMainContent = () => {
-    return <Outlet />;
+    return <Outlet context={{ selectedDirectMessage, onSelectDirectMessage: handleSelectDirectMessage }} />;
   };
 
   return (

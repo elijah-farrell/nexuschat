@@ -24,6 +24,99 @@ export const AuthProvider = ({ children }) => {
   const [skipValidation, setSkipValidation] = useState(false);
   const [shouldNavigateAfterRegister, setShouldNavigateAfterRegister] = useState(false);
   const { isConnected, isConnectingState } = useSocket();
+  
+  // Generate unique tab ID for cross-tab logout handling
+  const [tabId] = useState(() => {
+    const existingId = localStorage.getItem('nexuschat-tab-id');
+    if (existingId) {
+      return existingId;
+    }
+    const newId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('nexuschat-tab-id', newId);
+    return newId;
+  });
+
+  // Listen for cross-tab logout and login notifications
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'nexuschat-logout-request' && e.newValue) {
+        try {
+          const logoutData = JSON.parse(e.newValue);
+          // Only logout if this logout request is NOT from our own tab
+          if (logoutData.tabId !== tabId) {
+    
+            setUser(null);
+            setToken(null);
+            // Don't clear localStorage here - let the initiating tab handle that
+          }
+        } catch (error) {
+          // Error parsing logout request
+        }
+      }
+      
+      // Handle cross-tab login notifications
+      if (e.key === 'nexuschat-login-request' && e.newValue) {
+        try {
+          const loginData = JSON.parse(e.newValue);
+          // Only handle login if this login request is NOT from our own tab
+          if (loginData.tabId !== tabId) {
+    
+            // Update local state to match the login
+            setUser(loginData.user);
+            setToken(loginData.token);
+            // Don't set localStorage here - let the initiating tab handle that
+          }
+        } catch (error) {
+          // Error parsing login request
+        }
+      }
+    };
+
+    // Clean up tab ID when tab is closed
+    const handleBeforeUnload = () => {
+      localStorage.removeItem('nexuschat-tab-id');
+    };
+
+    // Clean up tab ID when tab becomes hidden (optional, for better cleanup)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden, could clean up some resources but keep tab ID
+      } else {
+        // Tab became visible - check if we need to sync with localStorage
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        
+        // If localStorage has auth data but our state doesn't, sync up
+        if (storedToken && storedUser && (!token || !user)) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+    
+            setToken(storedToken);
+            setUser(parsedUser);
+                  } catch (error) {
+          // Error parsing stored user on visibility change
+        }
+        }
+        
+        // Also check if we have user state but no valid token - clear invalid state
+        if (user && !storedToken) {
+  
+          setUser(null);
+          setToken(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [tabId, user, token]);
 
   useEffect(() => {
     // Prevent infinite loops by checking if we're already initializing
@@ -31,10 +124,6 @@ export const AuthProvider = ({ children }) => {
     
     // Skip validation if we just registered
     if (skipValidation) {
-      console.log('🔍 AUTH: Skipping validation for newly registered user');
-      console.log('🔍 AUTH: Current user state:', user);
-      console.log('🔍 AUTH: Current token state:', token);
-      
       setSkipValidation(false);
       setLoading(false);
       setIsReady(true);
@@ -42,15 +131,13 @@ export const AuthProvider = ({ children }) => {
       
       // Ensure user is set from localStorage if available
       const storedUser = localStorage.getItem('user');
-      console.log('🔍 AUTH: Stored user from localStorage:', storedUser);
       
       if (storedUser && !user) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          console.log('🔍 AUTH: Setting user from localStorage:', parsedUser);
           setUser(parsedUser);
         } catch (error) {
-          console.error('Error parsing stored user:', error);
+          // Error parsing stored user
         }
       }
       return;
@@ -60,6 +147,14 @@ export const AuthProvider = ({ children }) => {
     setIsReady(false); // Reset ready state when token changes
     
     const initializeAuth = async () => {
+      // Skip validation for newly registered users
+      if (skipValidation) {
+        setLoading(false);
+        setIsReady(true);
+        setIsInitializing(false);
+        return;
+      }
+
       if (token) {
         try {
           const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/profile`, {
@@ -104,11 +199,21 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (shouldNavigateAfterRegister && user && isReady) {
       setShouldNavigateAfterRegister(false);
-      // Use window.location to navigate after state is confirmed
-      window.location.href = '/dashboard';
+      // Use React Router navigation instead of window.location for better UX
+      // The navigation will be handled by the Register component's useEffect
     }
   }, [shouldNavigateAfterRegister, user, isReady]);
 
+  // Reset skipValidation flag after a delay to allow navigation to complete
+  useEffect(() => {
+    if (skipValidation) {
+      const timeout = setTimeout(() => {
+        setSkipValidation(false);
+      }, 2000); // Wait 2 seconds for navigation to complete
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [skipValidation]);
 
 
   // Enhanced loading state that includes socket connection
@@ -136,6 +241,36 @@ export const AuthProvider = ({ children }) => {
       return () => clearTimeout(timeout);
     }
   }, [isReady]);
+
+  // Periodic token validation to ensure token remains valid
+  useEffect(() => {
+    if (!token || !user) return;
+
+    const validateToken = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+        }
+      } catch (error) {
+        // Don't clear auth state on network errors, only on actual auth failures
+      }
+    };
+
+    // Validate token every 5 minutes
+    const interval = setInterval(validateToken, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [token, user]);
 
   // Periodically update user status (every 30 seconds)
   useEffect(() => {
@@ -273,20 +408,26 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('nexuschat-selected-server');
       localStorage.removeItem('nexuschat-friends-active-tab');
       
+      // Notify other tabs about successful login before setting localStorage
+      const loginData = { tabId, user: data.user, token: data.token, timestamp: Date.now() };
+      localStorage.setItem('nexuschat-login-request', JSON.stringify(loginData));
+      
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Clear the login request to prevent it from persisting
+      localStorage.removeItem('nexuschat-login-request');
+      
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Network error. Please check your connection.' };
     }
-  }, []);
+  }, [tabId]);
 
   const register = useCallback(async (username, password, name = null) => {
     try {
-      console.log('🔍 REGISTER: Starting registration for:', username);
-      
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       if (!backendUrl) {
         return { success: false, error: 'VITE_BACKEND_URL environment variable is not set' };
@@ -300,16 +441,12 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password, name }),
       });
 
-      console.log('🔍 REGISTER: Response status:', response.status);
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('🔍 REGISTER: Failed with error:', errorData);
         return { success: false, error: errorData.error || 'Registration failed' };
       }
 
       const data = await response.json();
-      console.log('🔍 REGISTER: Success! Token:', data.token ? 'exists' : 'missing', 'User:', data.user);
       
       // Clear any existing auth data before setting new user
       localStorage.removeItem('token');
@@ -320,13 +457,18 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('nexuschat-selected-server');
       localStorage.removeItem('nexuschat-friends-active-tab');
       
+      // Notify other tabs about successful registration before setting localStorage
+      const loginData = { tabId, user: data.user, token: data.token, timestamp: Date.now() };
+      localStorage.setItem('nexuschat-login-request', JSON.stringify(loginData));
+      
       // Set token first, then user to ensure proper initialization
-      console.log('🔍 REGISTER: Setting token to:', data.token);
       setToken(data.token);
-      console.log('🔍 REGISTER: Setting user to:', data.user);
       setUser(data.user);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Clear the login request to prevent it from persisting
+      localStorage.removeItem('nexuschat-login-request');
       
       // Force ready state to true after successful registration
       setLoading(false);
@@ -338,10 +480,8 @@ export const AuthProvider = ({ children }) => {
       // Signal that navigation should happen after state is set
       setShouldNavigateAfterRegister(true);
       
-      console.log('🔍 REGISTER: AuthContext updated, returning success');
       return { success: true };
     } catch (error) {
-      console.log('🔍 REGISTER: Network error:', error);
       return { success: false, error: 'Network error. Please check your connection.' };
     }
   }, []);
@@ -361,17 +501,27 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       // Silently handle logout errors
     } finally {
+      // Notify other tabs about logout before clearing localStorage
+      const logoutData = { tabId, timestamp: Date.now() };
+      localStorage.setItem('nexuschat-logout-request', JSON.stringify(logoutData));
+      
+      // Clear local state
       setUser(null);
       setToken(null);
+      
+      // Clear localStorage for this tab only
       localStorage.removeItem('token');
-      // Clear all app state from localStorage for fresh start
+      localStorage.removeItem('user');
       localStorage.removeItem('nexuschat-active-section');
       localStorage.removeItem('nexuschat-selected-channel');
       localStorage.removeItem('nexuschat-selected-dm');
       localStorage.removeItem('nexuschat-selected-server');
       localStorage.removeItem('nexuschat-friends-active-tab');
+      
+      // Clear the logout request to prevent it from persisting
+      localStorage.removeItem('nexuschat-logout-request');
     }
-  }, [token]);
+  }, [token, tabId]);
 
   const value = useMemo(() => ({
     user,

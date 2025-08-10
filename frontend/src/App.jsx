@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, createTheme, Button } from '@mui/material';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
@@ -16,8 +16,120 @@ import ProtectedRoute from './components/user/ProtectedRoute';
 import { SocketProvider } from './contexts/SocketContext';
 import { Box, CircularProgress, Typography, Fade } from '@mui/material';
 
-// AppLoading component defined directly in App.jsx
-const AppLoading = ({ children }) => {
+// Component to manage body class based on route
+const BodyClassManager = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    if (location.pathname === '/') {
+      document.body.classList.add('landing-page');
+    } else {
+      document.body.classList.remove('landing-page');
+      // Reset any inline cursor styles that might have been set
+      document.body.style.cursor = '';
+    }
+  }, [location.pathname]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('landing-page');
+      document.body.style.cursor = '';
+    };
+  }, []);
+  
+  return null;
+};
+
+const App = () => {
+  const [mode, setMode] = useState(() => {
+    const savedMode = localStorage.getItem('nexuschat-theme');
+    return savedMode || 'dark';
+  });
+
+  // Save theme preference to localStorage and update body attribute
+  useEffect(() => {
+    localStorage.setItem('nexuschat-theme', mode);
+    document.body.setAttribute('data-theme', mode);
+  }, [mode]);
+
+  const theme = createTheme({
+    palette: {
+      mode,
+      background: {
+        default: mode === 'dark' ? '#1E1F22' : '#FFFFFF',
+        paper: mode === 'dark' ? '#36393F' : '#F4F4F5',
+      },
+      primary: {
+        main: '#3B82F6',
+      },
+      secondary: {
+        main: '#10B981',
+      },
+      text: {
+        primary: mode === 'dark' ? '#FFFFFF' : '#1F1F1F',
+        secondary: mode === 'dark' ? '#B9BBBE' : '#606060',
+      },
+      divider: mode === 'dark' ? '#40444B' : '#E4E4E7',
+    },
+    shape: { borderRadius: 10 },
+    breakpoints: {
+      values: {
+        xs: 0,
+        sm: 600,
+        md: 960,
+        lg: 1280,
+        xl: 1920,
+      },
+    },
+    components: {
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
+            borderRight: `1px solid ${mode === 'dark' ? '#40444B' : '#E4E4E7'}`,
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundColor: mode === 'dark' ? '#36393F' : '#F4F4F5',
+            border: `1px solid ${mode === 'dark' ? '#40444B' : '#E4E4E7'}`,
+          },
+        },
+      },
+    },
+  });
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <SocketProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <Router 
+              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+            >
+              <BodyClassManager />
+              <AppContent mode={mode} setMode={setMode} />
+            </Router>
+          </NotificationProvider>
+        </AuthProvider>
+      </SocketProvider>
+    </ThemeProvider>
+  );
+};
+
+// AppContent component that uses the auth context
+const AppContent = ({ mode, setMode }) => {
   const { isFullyReady, user, logout } = useAuth();
   const location = window.location.pathname;
   const isAuthPage = location === '/login' || location === '/register';
@@ -96,112 +208,27 @@ const AppLoading = ({ children }) => {
       </Fade>
     );
   }
-  return children;
-};
-
-const App = () => {
-  const [mode, setMode] = useState(() => {
-    const savedMode = localStorage.getItem('nexuschat-theme');
-    return savedMode || 'dark';
-  });
-
-  // Save theme preference to localStorage and update body attribute
-  useEffect(() => {
-    localStorage.setItem('nexuschat-theme', mode);
-    document.body.setAttribute('data-theme', mode);
-  }, [mode]);
-
-  const theme = createTheme({
-    palette: {
-      mode,
-      background: {
-        default: mode === 'dark' ? '#1E1F22' : '#FFFFFF',
-        paper: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
-      },
-      primary: {
-        main: '#3B82F6',
-      },
-      secondary: {
-        main: '#10B981',
-      },
-      text: {
-        primary: mode === 'dark' ? '#FFFFFF' : '#1F1F1F',
-        secondary: mode === 'dark' ? '#B9BBBE' : '#606060',
-      },
-      divider: mode === 'dark' ? '#40444B' : '#E4E4E7',
-    },
-    shape: { borderRadius: 10 },
-    breakpoints: {
-      values: {
-        xs: 0,
-        sm: 600,
-        md: 960,
-        lg: 1280,
-        xl: 1920,
-      },
-    },
-    components: {
-      MuiAppBar: {
-        styleOverrides: {
-          root: {
-            backgroundColor: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
-          },
-        },
-      },
-      MuiDrawer: {
-        styleOverrides: {
-          paper: {
-            backgroundColor: mode === 'dark' ? '#2C2F33' : '#F4F4F5',
-            borderRight: `1px solid ${mode === 'dark' ? '#40444B' : '#E4E4E7'}`,
-          },
-        },
-      },
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            backgroundColor: mode === 'dark' ? '#2C2F33' : '#FFFFFF',
-            border: `1px solid ${mode === 'dark' ? '#40444B' : '#E4E4E7'}`,
-          },
-        },
-      },
-    },
-  });
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <SocketProvider>
-        <AuthProvider>
-          <NotificationProvider>
-              <Router 
-                future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-              >
-                <AppLoading>
-                  <Routes>
-                    <Route path="/" element={<LandingPage mode={mode} setMode={setMode} />} />
-                    <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
-                    <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
-                    <Route
-                      path="/dashboard"
-                      element={
-                        <ProtectedRoute>
-                          <AppLayout mode={mode} setMode={setMode} />
-                        </ProtectedRoute>
-                      }
-                    >
-                      <Route index element={<Home mode={mode} setMode={setMode} />} />
-                      <Route path="friends" element={<Friends mode={mode} setMode={setMode} />} />
-                      <Route path="chat" element={<Chat mode={mode} setMode={setMode} />} />
-                      <Route path="settings" element={<Settings mode={mode} setMode={setMode} />} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/" />} />
-                  </Routes>
-                </AppLoading>
-              </Router>
-            </NotificationProvider>
-        </AuthProvider>
-      </SocketProvider>
-    </ThemeProvider>
+    <Routes>
+      <Route path="/" element={<LandingPage mode={mode} setMode={setMode} />} />
+      <Route path="/login" element={<Login mode={mode} setMode={setMode} />} />
+      <Route path="/register" element={<Register mode={mode} setMode={setMode} />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <AppLayout mode={mode} setMode={setMode} />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Home mode={mode} setMode={setMode} />} />
+        <Route path="friends" element={<Friends mode={mode} setMode={setMode} />} />
+        <Route path="chat" element={<Chat mode={mode} setMode={setMode} />} />
+        <Route path="settings" element={<Settings mode={mode} setMode={setMode} />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 };
 

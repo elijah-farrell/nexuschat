@@ -64,7 +64,7 @@ const CustomHubIcon = ({ size = 64 }) => (
 
 const Register = ({ mode, setMode }) => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, user, loading: authLoading } = useAuth();
   
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -73,10 +73,35 @@ const Register = ({ mode, setMode }) => {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Auto-login: redirect if user is already logged in and token is valid
+  useEffect(() => {
+    if (user && !authLoading) {
+      // Check if we have a valid token before redirecting
+      const token = localStorage.getItem('token');
+      if (token) {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, authLoading, navigate]);
+
+  // Clean up invalid auth state when component mounts
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    // If we have user state but no valid token, clear the invalid state
+    if (user && !token) {
+      // Clear localStorage and let AuthContext handle the cleanup
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      // Force a page reload to reset the auth state
+      window.location.reload();
+    }
+  }, [user]);
   
   // Username availability states
   const [usernameStatus, setUsernameStatus] = useState('idle'); // 'idle', 'checking', 'available', 'unavailable', 'invalid'
@@ -193,10 +218,8 @@ const Register = ({ mode, setMode }) => {
         setUsernameAvailability(null);
       }
     } catch (error) {
-      console.error('Error checking username availability:', error);
-      setUsernameStatus('idle');
-      setUsernameAvailability(null);
-      setError('Network error. Please check your connection.');
+      // Silently handle username availability check errors
+      setUsernameStatus('invalid');
     }
   }, [usernameAttempts, lastCheckedUsername]);
 
@@ -324,7 +347,7 @@ const Register = ({ mode, setMode }) => {
   const handleSubmit = async () => {
     if (!validateCurrentStep()) return;
     
-    setLoading(true);
+    setIsSubmitting(true);
     setError('');
     
     try {
@@ -332,16 +355,15 @@ const Register = ({ mode, setMode }) => {
       
       if (result.success) {
         setActiveStep(2); // Success step
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
+        // Navigate immediately after successful registration
+        navigate('/dashboard');
       } else {
         setError(result.error || 'Registration failed. Please try again.');
       }
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -944,7 +966,7 @@ const Register = ({ mode, setMode }) => {
 
                 <Button
                   onClick={activeStep === 1 ? handleSubmit : handleNext}
-                  disabled={loading || !canProceedToNext()}
+                  disabled={isSubmitting || !canProceedToNext()}
                   endIcon={activeStep === 1 ? undefined : <ArrowForward />}
                   variant="contained"
                   sx={{
@@ -967,7 +989,7 @@ const Register = ({ mode, setMode }) => {
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  {loading ? (
+                  {isSubmitting ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : activeStep === 1 ? (
                     'Create Account'

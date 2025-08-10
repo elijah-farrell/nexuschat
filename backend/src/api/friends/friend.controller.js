@@ -1,5 +1,18 @@
 const { query } = require('../../config/database');
 
+// Helper function to clean up old accepted friend requests
+const cleanupAcceptedRequests = async () => {
+  try {
+    // Remove any friend requests that have been accepted but not cleaned up
+    await query(`
+      DELETE FROM friend_requests 
+      WHERE status = 'accepted'
+    `);
+  } catch (error) {
+    console.error('Cleanup accepted requests error:', error);
+  }
+};
+
 // ===== FRIEND APIs =====
 
 // Get all friends for the authenticated user
@@ -125,6 +138,9 @@ const sendFriendRequest = async (req, res) => {
       return res.status(400).json({ error: 'Cannot send friend request to yourself' });
     }
 
+    // Clean up any old accepted requests that might still be in the database
+    await cleanupAcceptedRequests();
+
     // Check if they are already friends
     const existingFriendsResult = await query(`
       SELECT id FROM friends 
@@ -135,36 +151,44 @@ const sendFriendRequest = async (req, res) => {
       return res.status(400).json({ error: 'Already friends with this user' });
     }
 
-    // Check for existing requests
-    const existingRequestsResult = await query(`
+    // Check for existing pending requests (only check for actual pending requests)
+    const existingPendingRequestsResult = await query(`
       SELECT id, status FROM friend_requests 
-      WHERE (sender_id = $1 AND recipient_id = $2) OR (sender_id = $3 AND recipient_id = $4)
+      WHERE ((sender_id = $1 AND recipient_id = $2) OR (sender_id = $3 AND recipient_id = $4))
+      AND status = 'pending'
     `, [senderId, targetUserId, targetUserId, senderId]);
 
-    if (existingRequestsResult.rows.length > 0) {
-      const request = existingRequestsResult.rows[0];
-      if (request.status === 'pending') {
-        return res.status(400).json({ error: 'Friend request already pending' });
-      } else if (request.status === 'rejected') {
-        // If previously rejected, update the existing request to pending and update created_at
-        await query('UPDATE friend_requests SET status = $1, updated_at = CURRENT_TIMESTAMP, created_at = NOW() WHERE id = $2', ['pending', request.id]);
-        // Emit real-time event to recipient (to all sockets)
-        if (req.io && req.userSockets && req.userSockets.has(targetUserId)) {
-          const userSocketSet = req.userSockets.get(targetUserId);
-          console.log(`[Friend Request] Emitting to user ${targetUserId}, sockets: ${userSocketSet.size}`);
-          for (const socketId of userSocketSet) {
-            req.io.to(socketId).emit('friend_request_received', { senderId });
-          }
-        } else {
-          console.log(`[Friend Request] User ${targetUserId} not online or no sockets available`);
+    if (existingPendingRequestsResult.rows.length > 0) {
+      return res.status(400).json({ error: 'Friend request already pending' });
+    }
+
+    // Check for previously rejected requests that can be renewed
+    const existingRejectedRequestsResult = await query(`
+      SELECT id, status FROM friend_requests 
+      WHERE ((sender_id = $1 AND recipient_id = $2) OR (sender_id = $3 AND recipient_id = $4))
+      AND status = 'rejected'
+    `, [senderId, targetUserId, targetUserId, senderId]);
+
+    if (existingRejectedRequestsResult.rows.length > 0) {
+      const request = existingRejectedRequestsResult.rows[0];
+      // If previously rejected, update the existing request to pending and update created_at
+      await query('UPDATE friend_requests SET status = $1, updated_at = CURRENT_TIMESTAMP, created_at = NOW() WHERE id = $2', ['pending', request.id]);
+      // Emit real-time event to recipient (to all sockets)
+      if (req.io && req.userSockets && req.userSockets.has(targetUserId)) {
+        const userSocketSet = req.userSockets.get(targetUserId);
+        console.log(`[Friend Request] Emitting to user ${targetUserId}, sockets: ${userSocketSet.size}`);
+        for (const socketId of userSocketSet) {
+          req.io.to(socketId).emit('friend_request_received', { senderId });
         }
-        res.json({
-          success: true,
-          message: 'Friend request sent successfully',
-          requestId: request.id
-        });
-        return;
+      } else {
+        console.log(`[Friend Request] User ${targetUserId} not online or no sockets available`);
       }
+      res.json({
+        success: true,
+        message: 'Friend request sent successfully',
+        requestId: request.id
+      });
+      return;
     }
 
     // Create new friend request
@@ -216,11 +240,11 @@ const acceptFriendRequest = async (req, res) => {
 
     const request = requestsResult.rows[0];
 
-    // Update request status to accepted
-    await query('UPDATE friend_requests SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', ['accepted', requestId]);
-
     // Create friendship (add to friends table)
     await query('INSERT INTO friends (user_id, friend_id) VALUES ($1, $2)', [request.sender_id, request.recipient_id]);
+
+    // Delete the accepted friend request since it's no longer needed
+    await query('DELETE FROM friend_requests WHERE id = $1', [requestId]);
 
     // Emit real-time event to sender (to all sockets)
     if (req.io && req.userSockets && req.userSockets.has(request.sender_id)) {

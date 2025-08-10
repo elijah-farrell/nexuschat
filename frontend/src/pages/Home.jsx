@@ -331,7 +331,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
   const modernUsernameStyle = {
     fontWeight: 500,
     cursor: 'pointer',
-    color: '#5865F2',
+    color: '#3B82F6',
     transition: 'color 0.18s, text-decoration 0.18s, transform 0.18s',
   };
   // Simple style for Recently Added
@@ -387,7 +387,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
       }}>
         <Zoom in={true}>
           <Box sx={{ textAlign: 'center' }}>
-            <CircularProgress size={60} sx={{ color: '#5865F2', mb: 2 }} />
+            <CircularProgress size={60} sx={{ color: '#3B82F6', mb: 2 }} />
             <Typography variant="h6" sx={{ color: 'text.primary', mb: 1 }}>
               Loading your dashboard...
             </Typography>
@@ -481,11 +481,36 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
       <Fade in={!loading} timeout={800}>
         <Box sx={{ mb: 4, pt: { xs: 1.5, sm: 1, md: 0, lg: 0 } }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
+            <Box sx={{ pr: { xs: 2, sm: 3, md: 4 } }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: 'text.primary', 
+                  mb: 1,
+                  fontSize: { 
+                    xs: '1.2rem',   // Smaller on mobile
+                    sm: '1.35rem',  // Medium on small screens  
+                    md: '1.5rem',   // Default h5 size on medium+
+                    lg: '1.5rem' 
+                  },
+                  lineHeight: 1.2,
+                }}
+              >
                 {randomGreeting}
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography 
+                variant="body1" 
+                color="text.secondary"
+                sx={{
+                  fontSize: { 
+                    xs: '0.85rem',  // Smaller on mobile
+                    sm: '0.9rem',   // Slightly bigger on small screens
+                    md: '1rem',     // Default on medium+
+                  },
+                  lineHeight: 1.3,
+                }}
+              >
                 Here's what's happening in your world
               </Typography>
             </Box>
@@ -517,7 +542,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                     <Typography color="text.secondary">Friends</Typography>
                   </Box>
                   <Badge badgeContent={friendActivity?.friendRequests?.filter(r => r.status === 'pending').length || 0} color="error">
-                    <Avatar sx={{ bgcolor: '#1976d2' }}><PersonAddIcon /></Avatar>
+                    <Avatar sx={{ bgcolor: '#3B82F6' }}><PersonAddIcon /></Avatar>
                   </Badge>
                 </Box>
               </CardContent>
@@ -559,39 +584,64 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
             </Box>
           ) : (
             <>
-              <Tabs
-                key={`home-tabs-${friendActivity?.friendRequests?.length || 0}-${dmActivity?.unreadSummary?.total_unread || 0}-${loading}-${activeTab}`}
-                value={activeTab}
-                onChange={handleTabChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                allowScrollButtonsMobile
-                sx={{
-                  borderBottom: 1,
-                  borderColor: 'divider',
-                  minHeight: { xs: 56, sm: 48 },
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: '#5865F2',
-                    height: 3,
-                    transition: 'all 0.3s ease',
-                  },
-                  '& .MuiTabs-flexContainer': {
-                    justifyContent: 'flex-start',
-                    gap: { xs: 0, sm: 1 },
-                  },
-                  '& .MuiTab-root': {
+              <Box sx={{ position: 'relative' }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  allowScrollButtonsMobile
+                  sx={{
+                    borderBottom: 1,
+                    borderColor: 'divider',
                     minHeight: { xs: 56, sm: 48 },
-                    minWidth: { xs: 100, sm: 120, md: 140 },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-                    padding: { xs: '8px 12px', sm: '12px 16px' },
-                  },
-                }}
-                action={tabsRef}
-              >
-                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><PersonAddIcon />Friends</Box>} />
+                    '& .MuiTabs-indicator': {
+                      backgroundColor: 'primary.main',
+                      height: 3,
+                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                      borderRadius: '2px 2px 0 0',
+                    },
+                    '& .MuiTabs-flexContainer': {
+                      justifyContent: 'flex-start',
+                      gap: 0,
+                    },
+                    '& .MuiTab-root': {
+                      minHeight: { xs: 56, sm: 48 },
+                      minWidth: { xs: 100, sm: 120, md: 140 },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                      padding: { xs: '8px 12px', sm: '12px 16px' },
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      },
+                      '&.Mui-selected': {
+                        color: 'primary.main',
+                        fontWeight: 600,
+                      },
+                    },
+                  }}
+                  action={tabsRef}
+                >
+                  <Tab 
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PersonAddIcon />
+                        Friends
+                      </Box>
+                    } 
+                  />
+                  <Tab 
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MessageIcon />
+                        Messages
+                      </Box>
+                    } 
+                  />
+                </Tabs>
+                
 
-                <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><MessageIcon />Messages{dmActivity?.unreadSummary?.total_unread > 0 && (<Chip label={dmActivity?.unreadSummary?.total_unread} size="small" color="primary" sx={{ height: 16, fontSize: '0.7rem' }} />)}</Box>} />
-              </Tabs>
+              </Box>
               <CardContent sx={{ 
                 p: { xs: 0.5, sm: 1, md: 2 },
                 maxHeight: { xs: '50vh', sm: 'none' },
@@ -658,7 +708,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                                     <IconButton
                                       onClick={e => { e.stopPropagation(); handleOpenDM(dm.id); }}
                                       size="small"
-                                      sx={{ ml: 1, color: 'text.secondary', transition: 'color 0.18s, transform 0.18s', '&:hover': { color: '#5865F2', transform: 'scale(1.2)' }, '&:active': { transform: 'scale(0.98)' } }}
+                                      sx={{ ml: 1, color: 'text.secondary', transition: 'color 0.18s, transform 0.18s', '&:hover': { color: '#3B82F6', transform: 'scale(1.2)' }, '&:active': { transform: 'scale(0.98)' } }}
                                       aria-label="Open direct message"
                                     >
                                       <MessageIcon fontSize="small" />
@@ -744,7 +794,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                         ?.length > 0 && (
                           <Box sx={{ mt: 3 }}>
                             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <AccessTimeIcon sx={{ color: '#5865F2' }} />
+                              <AccessTimeIcon sx={{ color: '#3B82F6' }} />
                               Recently Added
                             </Typography>
                             <List sx={{ p: 0 }}>
@@ -796,7 +846,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                       ) : (
                         <>
                           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <MessageIcon sx={{ color: '#5865F2' }} />
+                            <MessageIcon sx={{ color: '#3B82F6' }} />
                             Recent Activity
                           </Typography>
                           <List sx={{ p: 0 }}>
@@ -872,7 +922,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
                                     <IconButton
                                       onClick={e => { e.stopPropagation(); handleOpenDM(item.id); }}
                                       size="small"
-                                      sx={{ ml: 1, color: 'text.secondary', transition: 'color 0.18s, transform 0.18s', '&:hover': { color: '#5865F2', transform: 'scale(1.2)' }, '&:active': { transform: 'scale(0.98)' } }}
+                                      sx={{ ml: 1, color: 'text.secondary', transition: 'color 0.18s, transform 0.18s', '&:hover': { color: '#3B82F6', transform: 'scale(1.2)' }, '&:active': { transform: 'scale(0.98)' } }}
                                       aria-label="Open direct message"
                                     >
                                       <MessageIcon fontSize="small" />
@@ -911,7 +961,7 @@ const Home = ({ onShowUserProfile, onSelectDirectMessage, mode, setMode }) => {
               <Box sx={{ mb: 3 }}>
                 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <ellipse cx="90" cy="150" rx="70" ry="18" fill="#E3E9F7" />
-                  <rect x="40" y="40" width="100" height="60" rx="18" fill="#5865F2" />
+                  <rect x="40" y="40" width="100" height="60" rx="18" fill="#3B82F6" />
                   <rect x="55" y="60" width="70" height="10" rx="5" fill="#fff" opacity="0.8" />
                   <rect x="55" y="75" width="40" height="8" rx="4" fill="#fff" opacity="0.5" />
                   <circle cx="60" cy="55" r="6" fill="#FEE75C" />

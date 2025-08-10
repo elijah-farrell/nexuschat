@@ -33,12 +33,12 @@ This project is designed to be **completely free** to deploy and use:
 ## 📱 Screenshots
 
 ### 🚀 Landing Experience
-![Landing Page](images/landing_page.png)
-*Immersive 3D laptop showcase with animated particles - your first impression of NexusChat*
+![Landing Page](images/landing.png)
+*Immersive 3D experience with animated elements - your first impression of NexusChat*
 
 ### 🔐 Authentication
-![Login Page](images/login_page.png)
-*Secure login*
+![Login Page](images/login.png)
+*Secure login interface*
 
 ![Register Username](images/register_username.png)
 *Simple username registration*
@@ -47,25 +47,22 @@ This project is designed to be **completely free** to deploy and use:
 *Secure password creation*
 
 ### 🏠 Main Application
-![Dashboard](images/initial_homepage.png)
+![Dashboard](images/dashboard.png)
 *Clean dashboard interface after login*
 
 ### 💬 Messaging & Social
-![Chat Interface](images/dm_sidebar_chat_area.png)
-*Real-time messaging with intuitive sidebar*
+![Chat Interface](images/chat_area.png)
+*Real-time messaging with intuitive interface*
 
-![Friends Management](images/friends_page.png)
+![Friends Management](images/friends.png)
 *Comprehensive friends system*
 
-![User Profiles](images/view_friends_profile.png)
+![User Profiles](images/profile_view.png)
 *Detailed user profiles and status*
 
 ### ⚙️ Personalization
-![Settings](images/settings-page.png)
+![Settings](images/settings.png)
 *Complete settings and preferences*
-
-![Profile Customization](images/edit_profile_personalization.jpeg)
-*Personalize your profile and appearance*
 
 ## 📄 License
 

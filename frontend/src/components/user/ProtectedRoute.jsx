@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { CircularProgress, Box } from '@mui/material';
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading, isReady } = useAuth();
+  const { user, loading, isReady, token } = useAuth();
 
   if (loading || !isReady) {
     return (
@@ -20,7 +20,8 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!user) {
+  // Check both user and token - if either is missing, redirect to landing page
+  if (!user || !token) {
     return <Navigate to="/" replace />;
   }
 

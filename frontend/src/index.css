@@ -85,6 +85,39 @@ html {
   outline-offset: 2px;
 }
 
+/* Chrome Autofill Styles - Remove the blue highlight box */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 5000s ease-in-out 0s;
+  background-color: transparent !important;
+}
+
+/* Material-UI specific autofill overrides */
+.MuiInputBase-input:-webkit-autofill,
+.MuiInputBase-input:-webkit-autofill:hover,
+.MuiInputBase-input:-webkit-autofill:focus,
+.MuiInputBase-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 5000s ease-in-out 0s;
+  background-color: transparent !important;
+}
+
+/* For dark/light theme compatibility */
+body[data-theme="dark"] input:-webkit-autofill,
+body[data-theme="dark"] .MuiInputBase-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--dark-text) !important;
+}
+
+body[data-theme="light"] input:-webkit-autofill,
+body[data-theme="light"] .MuiInputBase-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--light-text) !important;
+}
+
 /* Selection styles */
 ::selection {
   background-color: #3B82F6;

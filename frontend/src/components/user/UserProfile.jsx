@@ -40,14 +40,14 @@ const UserProfile = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [bannerColor, setBannerColor] = useState(user?.banner_color || '#5865F2');
+  const [bannerColor, setBannerColor] = useState(user?.banner_color || '#3B82F6');
   
   const [formData, setFormData] = useState({
     username: user?.username || '',
     name: user?.name || '',
     bio: user?.bio || '',
     profile_picture: user?.profile_picture || '',
-    banner_color: user?.banner_color || '#5865F2',
+    banner_color: user?.banner_color || '#3B82F6',
     status: user?.status || 'online',
   });
 
@@ -64,10 +64,10 @@ const UserProfile = ({ open, onClose }) => {
         name: user.name || '',
         bio: user.bio || '',
         profile_picture: user.profile_picture || '',
-        banner_color: user.banner_color || '#5865F2',
+        banner_color: user.banner_color || '#3B82F6',
         status: user.status || 'online',
       });
-      setBannerColor(user.banner_color || '#5865F2');
+      setBannerColor(user.banner_color || '#3B82F6');
     }
   }, [user, editing]);
 
@@ -155,10 +155,10 @@ const UserProfile = ({ open, onClose }) => {
         name: user.name || '',
         bio: user.bio || '',
         profile_picture: user.profile_picture || '',
-        banner_color: user.banner_color || '#5865F2',
+        banner_color: user.banner_color || '#3B82F6',
         status: user.status || 'online',
       });
-      setBannerColor(user.banner_color || '#5865F2');
+      setBannerColor(user.banner_color || '#3B82F6');
     }
   };
 
@@ -365,7 +365,7 @@ const UserProfile = ({ open, onClose }) => {
             width: '100%',
             height: 120,
             borderRadius: 2,
-            background: `linear-gradient(135deg, ${editing ? bannerColor : (user?.banner_color || '#5865F2')} 0%, ${editing ? bannerColor : (user?.banner_color || '#5865F2')}dd 100%)`,
+            background: `linear-gradient(135deg, ${editing ? bannerColor : (user?.banner_color || '#3B82F6')} 0%, ${editing ? bannerColor : (user?.banner_color || '#3B82F6')}dd 100%)`,
             overflow: 'hidden',
             mb: 2,
             mt: 3,

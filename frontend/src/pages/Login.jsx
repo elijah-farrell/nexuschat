@@ -20,7 +20,8 @@ import {
   Person, 
   Home, 
   DarkMode, 
-  LightMode 
+  LightMode,
+
 } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -47,16 +48,42 @@ const CustomHubIcon = ({ size = 64 }) => (
 
 const Login = ({ mode, setMode }) => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Auto-login: redirect if user is already logged in and token is valid
+  useEffect(() => {
+    if (user && !loading) {
+      // Check if we have a valid token before redirecting
+      const token = localStorage.getItem('token');
+      if (token) {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, loading, navigate]);
+
+  // Clean up invalid auth state when component mounts
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    // If we have user state but no valid token, clear the invalid state
+    if (user && !token) {
+      console.log('🔍 LOGIN: Clearing invalid auth state');
+      // Clear localStorage and let AuthContext handle the cleanup
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      // Force a page reload to reset the auth state
+      window.location.reload();
+    }
+  }, [user]);
 
   const toggleTheme = () => {
     const newMode = mode === 'dark' ? 'light' : 'dark';
@@ -66,9 +93,12 @@ const Login = ({ mode, setMode }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+
+
   };
 
   const handleTogglePassword = () => {
@@ -95,7 +125,7 @@ const Login = ({ mode, setMode }) => {
     
     if (!validateForm()) return;
     
-    setLoading(true);
+    setFormLoading(true);
     setError('');
     
     try {
@@ -104,9 +134,19 @@ const Login = ({ mode, setMode }) => {
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
+
+
+
+
+
+
+
+
+
+
 
   // Modern input field styling
   const getInputSx = () => ({
@@ -297,11 +337,12 @@ const Login = ({ mode, setMode }) => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Person sx={{ color: mode === 'dark' ? '#B9BBBE' : '#606060' }} />
+                      <Lock sx={{ color: mode === 'dark' ? '#B9BBBE' : '#606060' }} />
                     </InputAdornment>
                   ),
                 }}
               />
+              
 
               <TextField
                 fullWidth
@@ -343,7 +384,7 @@ const Login = ({ mode, setMode }) => {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={loading}
+                disabled={formLoading}
                 sx={{
                   py: 1.8,
                   borderRadius: '12px',
@@ -365,7 +406,7 @@ const Login = ({ mode, setMode }) => {
                   mb: 3
                 }}
               >
-                {loading ? (
+                {formLoading ? (
                   <CircularProgress size={24} color="inherit" />
                 ) : (
                   'Sign In'

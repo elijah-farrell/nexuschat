@@ -126,7 +126,7 @@ const ViewProfile = ({ open, onClose, userId, onGoToDM }) => {
   };
 
   const getDisplayName = (user) => user.name && user.name !== user.username ? user.name : null;
-  const bannerColor = user?.banner_color || '#5865F2';
+  const bannerColor = user?.banner_color || '#3B82F6';
   const getLiveStatus = (user) => userStatuses.get(user.id) || user.status || 'offline';
 
   const handleStartDM = async () => {
@@ -202,7 +202,7 @@ const ViewProfile = ({ open, onClose, userId, onGoToDM }) => {
                 mx: 2,
                 p: 2, 
                 borderRadius: 2, 
-                background: `linear-gradient(135deg, ${user?.banner_color || '#5865F2'} 0%, ${(user?.banner_color || '#5865F2')}dd 100%)`,
+                background: `linear-gradient(135deg, ${user?.banner_color || '#3B82F6'} 0%, ${(user?.banner_color || '#3B82F6')}dd 100%)`,
                 position: 'relative',
                 color: 'white'
               }}

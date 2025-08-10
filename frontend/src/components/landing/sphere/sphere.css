@@ -1,0 +1,122 @@
+@import url('https://rsms.me/inter/inter.css');
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+main {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom cursor only applies on landing page */
+body.landing-page {
+  cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxMCIgZmlsbD0iIzNCODJGNiIvPjwvc3ZnPg=='),
+    auto;
+}
+
+/* Reset cursor to default for all other pages */
+body:not(.landing-page) {
+  cursor: default;
+}
+
+main {
+  background: #f0f0f0;
+  display: flex;
+  flex-direction: row;
+}
+
+.canvas {
+  order: 2;
+  flex: 1;
+  height: 100%;
+}
+
+.overlay {
+  position: relative;
+  order: 1;
+  flex: 1;
+  pointer-events: none;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media only screen and (max-aspect-ratio: 8/7) {
+  main {
+    flex-direction: column;
+  }
+  .canvas {
+    order: 1;
+  }
+  svg {
+    order: 2;
+    width: 100%;
+    max-width: 100%;
+    height: 60vh;
+  }
+}
+
+/* Authentication Buttons Styles */
+.auth-buttons-inline {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+  pointer-events: auto;
+}
+
+.auth-btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  outline: none;
+  white-space: nowrap;
+  min-width: 140px;
+  text-align: center;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+.auth-btn-signin {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1F1F1F;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: none;
+}
+
+.auth-btn-signin:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(59, 130, 246, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+}
+
+.auth-btn-register {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: none;
+}
+
+.auth-btn-register:hover {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
+}
+
+.auth-btn:active {
+  transform: translateY(0);
+}

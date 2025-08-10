@@ -42,6 +42,7 @@ const DMSidebar = React.memo(({
   const [openDMs, setOpenDMs] = useState([]);
   // Rename local loading state to 'fetching' to avoid conflict with 'loading' from useAuth
   const [fetching, setFetching] = useState(false);
+  const [error, setError] = useState(null);
   const [addDMDialog, setAddDMDialog] = useState(false);
   const [showGroupCreator, setShowGroupCreator] = useState(false);
 
@@ -70,11 +71,11 @@ const DMSidebar = React.memo(({
         const data = await response.json();
         setFriends(data.friends || []);
       } else {
-        // setError('Failed to load friends'); // Original code had this line commented out
+        setError('Failed to load friends');
       }
     } catch (error) {
       console.error('Error fetching friends:', error);
-      // setError('Network error'); // Original code had this line commented out
+      setError('Network error');
     } finally {
       setFetching(false);
     }
@@ -95,7 +96,8 @@ const DMSidebar = React.memo(({
         setOpenDMs(data.dms || []);
       }
     } catch (error) {
-      // handle error
+      console.error('Error fetching open DMs:', error);
+      setError('Failed to load DMs');
     } finally {
       setFetching(false);
     }
@@ -269,13 +271,15 @@ const DMSidebar = React.memo(({
     onClose: PropTypes.func,
   };
 
+
+
   return (
     <Slide direction="right" in={true} mountOnEnter unmountOnExit appear>
       <Box
         sx={{
           width: { xs: '100vw', sm: 240 },
           height: '100%',
-          bgcolor: 'background.paper',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#404349' : '#F4F4F5',
           borderRight: { xs: 0, sm: 1 },
           borderLeft: 0,
           borderColor: { xs: 'transparent', sm: 'divider' },
@@ -300,7 +304,7 @@ const DMSidebar = React.memo(({
             justifyContent: 'space-between',
             height: { xs: 80, sm: 64 },
             flexShrink: 0,
-            bgcolor: 'background.paper',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#404349' : '#F4F4F5',
           }}
         >
           <Typography 
@@ -349,12 +353,12 @@ const DMSidebar = React.memo(({
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Error Alert */}
-          {/* {error && ( // Original code had this line commented out
-            <Alert severity="error" sx={{ m: 1 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )} */}
+                {/* Error Alert */}
+      {error && (
+        <Alert severity="error" sx={{ m: 1 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
           {fetching ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress />
@@ -400,9 +404,9 @@ const DMSidebar = React.memo(({
                           : 'rgba(0, 0, 0, 0.04)',
                       },
                       '&.Mui-selected': {
-                        backgroundColor: 'rgba(88, 101, 242, 0.2)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
                         '&:hover': {
-                          backgroundColor: 'rgba(88, 101, 242, 0.3)',
+                          backgroundColor: 'rgba(59, 130, 246, 0.3)',
                         },
                       },
                     }}
@@ -445,7 +449,7 @@ const DMSidebar = React.memo(({
         {/* Add DM Button */}
         <Box sx={{ 
           p: 2, 
-          bgcolor: 'background.paper',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#404349' : '#F4F4F5',
           minHeight: 80,
           flexShrink: 0,
           display: 'flex',
@@ -472,7 +476,7 @@ const DMSidebar = React.memo(({
           fullWidth
           PaperProps={{
             sx: {
-              bgcolor: 'background.paper',
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? '#404349' : '#F4F4F5',
               borderRadius: 2,
             }
           }}

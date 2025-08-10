@@ -5,12 +5,6 @@ node_modules/
 # Environment files
 .env
 
-# OS files
-.DS_Store
-Thumbs.db
-**/.DS_Store
-**/Thumbs.db
-
 # IDE files
 .idea/
 .vscode/
@@ -20,5 +14,3 @@ Thumbs.db
 project_config.json
 future_features.md
 .cursorrules
-RENDER_DEPLOYMENT.md
-backend/nexuschat.db

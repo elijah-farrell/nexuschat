@@ -75,6 +75,63 @@ const ChatArea = React.memo(({
     }
   };
 
+  const fetchDMInfo = useCallback(async (overrideDmId = null) => {
+    if (!token) return;
+    try {
+      setError(null);
+      const id = overrideDmId || dmId;
+      if (!id) return;
+      
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDmInfo(data.dm);
+      } else {
+        setError('Failed to load conversation');
+      }
+    } catch (error) {
+      setError('Failed to load conversation');
+    }
+  }, [token, dmId]);
+
+  const fetchMessages = useCallback(async (overrideDmId = null) => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      setError(null);
+      let url;
+      if (selectedChannel) {
+        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/channels/${selectedChannel.id}/messages`;
+      } else if (dmId || overrideDmId) {
+        const id = overrideDmId || dmId;
+        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}/messages`;
+      } else {
+        return;
+      }
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || data);
+      } else {
+        setError('Failed to load messages');
+      }
+    } catch (error) {
+      setError('Network error');
+    } finally {
+      setLoading(false);
+    }
+  }, [token, selectedChannel, dmId]);
+
   useEffect(() => {
     if (selectedChannel) {
       setDmId(null);
@@ -86,14 +143,14 @@ const ChatArea = React.memo(({
       fetchDMInfo(selectedDirectMessage);
       fetchMessages(selectedDirectMessage);
     }
-  }, [selectedChannel, selectedDirectMessage, token]);
+  }, [selectedChannel, selectedDirectMessage, token, fetchMessages, fetchDMInfo]);
 
   // Also fetch DM info when dmId changes
   useEffect(() => {
     if (dmId && !selectedChannel) {
       fetchDMInfo();
     }
-  }, [dmId, selectedChannel]);
+  }, [dmId, selectedChannel, fetchDMInfo]);
 
   // Real-time message handling
   useEffect(() => {
@@ -262,65 +319,7 @@ const ChatArea = React.memo(({
         fetchMessages(data.dm_id);
         fetchDMInfo(data.dm_id);
       } else {
-        // setError('Failed to get DM conversation'); // Original code had this line commented out
-      }
-    } catch (error) {
-      // setError('Network error'); // Original code had this line commented out
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDMInfo = async (overrideDmId = null) => {
-    if (!token) return;
-    try {
-      setError(null);
-      const id = overrideDmId || dmId;
-      if (!id) return;
-      
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setDmInfo(data.dm);
-      } else {
-        setError('Failed to load conversation');
-      }
-    } catch (error) {
-      console.error('Error fetching DM info:', error);
-      setError('Failed to load conversation');
-    }
-  };
-
-  const fetchMessages = async (overrideDmId = null) => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      setError(null);
-      let url;
-      if (selectedChannel) {
-        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/channels/${selectedChannel.id}/messages`;
-      } else if (dmId || overrideDmId) {
-        const id = overrideDmId || dmId;
-        url = `${import.meta.env.VITE_BACKEND_URL}/api/messaging/dms/${id}/messages`;
-      } else {
-        return;
-      }
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.messages || data);
-      } else {
-        setError('Failed to load messages');
+        setError('Failed to get DM conversation');
       }
     } catch (error) {
       setError('Network error');
@@ -359,10 +358,10 @@ const ChatArea = React.memo(({
         setMessages(prev => [...prev, newMsg]);
         setMessage('');
       } else {
-        // setError('Failed to send message'); // Original code had this line commented out
+        setError('Failed to send message');
       }
     } catch (error) {
-      // setError('Network error'); // Original code had this line commented out
+      setError('Network error');
     } finally {
       setSending(false);
     }
@@ -446,7 +445,6 @@ const ChatArea = React.memo(({
         hour12: true 
       });
     } catch (error) {
-      console.error('Error formatting timestamp:', error, timestamp);
       return '';
     }
   };
@@ -503,7 +501,6 @@ const ChatArea = React.memo(({
         });
       }
     } catch (error) {
-      console.error('Error formatting date header:', error, timestamp);
       return '';
     }
   };
@@ -553,7 +550,6 @@ const ChatArea = React.memo(({
         return `${dateStr} at ${timeStr}`;
       }
     } catch (error) {
-      console.error('Error formatting full timestamp:', error, timestamp);
       return '';
     }
   };

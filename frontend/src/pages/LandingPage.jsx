@@ -1,113 +1,25 @@
-import React, { Suspense } from 'react'
+import React from 'react'
 import { Canvas } from '@react-three/fiber'
-import { Box } from '@mui/material'
-import StyledHeroContent from '../components/landing/StyledHeroContent.jsx'
-import WobblingSphere from '../components/ui/WobblingSphere.jsx'
-// Colors are now hardcoded for the clean Telegram-inspired theme
-import './LandingPage.css'
+import { OrbitControls } from '@react-three/drei'
+import { useSpring } from '@react-spring/core'
+import { a } from '@react-spring/web'
+import NexusChatOverlay from '../components/landing/sphere/NexusChatOverlay.jsx'
+import SphereScene from '../components/landing/sphere/SphereScene.jsx'
+import '../components/landing/sphere/sphere.css'
 
-const LandingPage = ({ mode, setMode }) => {
+export default function LandingPage({ mode, setMode }) {
+  // This spring controls the background and the svg fill (text color)
+  const [{ background, fill }, set] = useSpring({ 
+    background: mode === 'dark' ? '#1E1F22' : '#FFFFFF', 
+    fill: mode === 'dark' ? '#FFFFFF' : '#1F1F1F' 
+  }, [mode])
   return (
-    <div 
-      className="landing-container"
-      style={{ 
-        width: '100vw', 
-        height: '100vh', 
-        position: 'relative', 
-        overflow: 'hidden',
-        background: mode === 'dark' 
-          ? '#1E1F22'
-          : '#FFFFFF',
-        display: 'flex'
-      }}
-    >
-      {/* Full Page Background Gradient */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: mode === 'dark' 
-            ? 'linear-gradient(135deg, #1E1F22 0%, #2C2F33 100%)'
-            : 'linear-gradient(135deg, #FFFFFF 0%, #F4F4F5 100%)',
-          zIndex: 1
-        }}
-      />
-
-      {/* CSS-based background pattern */}
-      <div className="background-pattern" data-mode={mode} />
-
-      {/* Left Side - Scrollable Content Overlay (Now Wider) */}
-      <div
-        className="content-section"
-        style={{
-          width: '65%', // Increased from 50% to 65%
-          height: '100vh',
-          position: 'relative',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-        {/* Scrollable content container with smooth scrolling */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            scrollBehavior: 'smooth',
-            paddingTop: '60px', // Reduced padding since no top elements
-            paddingLeft: '60px', // Increased padding for better spacing
-            paddingRight: '40px',
-            paddingBottom: '40px',
-            // Hide scrollbar but keep functionality
-            scrollbarWidth: 'none', // Firefox
-            msOverflowStyle: 'none', // IE/Edge
-          }}
-          className="smooth-scroll"
-        >
-          <StyledHeroContent mode={mode} setMode={setMode} />
-        </div>
-      </div>
-
-      {/* Right Side - 3D Sphere Canvas (Now Smaller) */}
-      <div
-        style={{
-          width: '35%', // Reduced from 50% to 35%
-          height: '100vh',
-          position: 'relative',
-          zIndex: 5
-        }}
-      >
-        {/* 3D Wobbling Sphere Canvas */}
-        <Canvas 
-          camera={{ position: [0, 0, 4], fov: 75 }}
-          style={{ 
-            width: '100%',
-            height: '100%',
-            background: 'transparent'
-          }}
-          gl={{ 
-            antialias: true,
-            alpha: true,
-            powerPreference: 'high-performance',
-            preserveDrawingBuffer: false,
-            stencil: false,
-            depth: true
-          }}
-          frameloop="always"
-          dpr={[1, 1.5]}
-          performance={{ min: 0.5 }}
-        >
-          <Suspense fallback={null}>
-            <WobblingSphere mode={mode} onModeToggle={setMode} />
-          </Suspense>
-        </Canvas>
-      </div>
-    </div>
+    <a.main style={{ background }}>
+      <Canvas className="canvas" dpr={[1, 2]}>
+        <SphereScene setBg={set} mode={mode} setMode={setMode} />
+        <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2} minPolarAngle={Math.PI / 2} />
+      </Canvas>
+      <NexusChatOverlay fill={fill} />
+    </a.main>
   )
 }
-
-export default LandingPage;

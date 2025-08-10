@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Container,
@@ -16,7 +16,12 @@ import {
   Step,
   StepLabel,
   Divider,
-  Tooltip
+  Tooltip,
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { 
   Visibility, 
@@ -29,7 +34,10 @@ import {
   CheckCircle,
   ArrowBack,
   ArrowForward,
-  InfoOutlined
+  InfoOutlined,
+  CheckCircleOutline,
+  Cancel,
+  Warning
 } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,35 +77,207 @@ const Register = ({ mode, setMode }) => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Username availability states
+  const [usernameStatus, setUsernameStatus] = useState('idle'); // 'idle', 'checking', 'available', 'unavailable', 'invalid'
+  const [usernameAvailability, setUsernameAvailability] = useState(null);
+  const [usernameCheckTimeout, setUsernameCheckTimeout] = useState(null);
+  const [usernameAttempts, setUsernameAttempts] = useState(0);
+  const [lastCheckedUsername, setLastCheckedUsername] = useState('');
+  
+  // Password strength states
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    length: false,
+    lowercase: false,
+    uppercase: false,
+    number: false,
+    special: false
+  });
 
-  const steps = ['Choose Username', 'Set Password', 'Complete'];
+  const steps = ['Account Details', 'Security Setup', 'Complete'];
+  const usernameInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
   const toggleTheme = () => {
     const newMode = mode === 'dark' ? 'light' : 'dark';
     setMode(newMode);
   };
 
+  // Input sanitization and normalization
+  const sanitizeInput = (input, type = 'text') => {
+    if (!input) return '';
+    
+    let sanitized = input.trim();
+    
+    switch (type) {
+      case 'username':
+        // Remove leading/trailing spaces, convert to lowercase
+        sanitized = sanitized.toLowerCase().replace(/\s+/g, '');
+        break;
+      case 'password':
+        // Don't trim passwords, but remove leading/trailing whitespace
+        sanitized = input.replace(/^\s+|\s+$/g, '');
+        break;
+      default:
+        sanitized = sanitized.replace(/\s+/g, ' ').trim();
+    }
+    
+    return sanitized;
+  };
+
+  // Enhanced password strength checker
+  const checkPasswordStrength = useCallback((password) => {
+    const requirements = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      number: /\d/.test(password),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    };
+    
+    setPasswordRequirements(requirements);
+    
+    const score = Object.values(requirements).filter(Boolean).length;
+    setPasswordStrength(score);
+    
+    return score;
+  }, []);
+
+  // Debounced username availability check with rate limiting
+  const checkUsernameAvailability = useCallback(async (username) => {
+    if (!username || username.length < 3) {
+      setUsernameStatus('idle');
+      setUsernameAvailability(null);
+      return;
+    }
+
+    // Validate username format before making API call
+    if (!/^[a-zA-Z0-9_]+$/.test(username) || username.startsWith('_') || username.endsWith('_')) {
+      setUsernameStatus('invalid');
+      setUsernameAvailability(false);
+      return;
+    }
+
+    // Don't check if we already checked this exact username
+    if (username === lastCheckedUsername) {
+      return;
+    }
+
+    // Rate limiting: prevent excessive API calls
+    if (usernameAttempts >= 10) {
+      setUsernameStatus('idle');
+      setError('Too many username checks. Please wait a moment.');
+      return;
+    }
+
+    setUsernameStatus('checking');
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/check-username`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsernameAvailability(data.available);
+        setUsernameStatus(data.available ? 'available' : 'unavailable');
+        setUsernameAttempts(prev => prev + 1);
+        setLastCheckedUsername(username); // Remember we checked this username
+      } else {
+        setUsernameStatus('idle');
+        setUsernameAvailability(null);
+      }
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      setUsernameStatus('idle');
+      setUsernameAvailability(null);
+      setError('Network error. Please check your connection.');
+    }
+  }, [usernameAttempts, lastCheckedUsername]);
+
+  // Debounced username check with proper cleanup and better debouncing
+  useEffect(() => {
+    if (usernameCheckTimeout) {
+      clearTimeout(usernameCheckTimeout);
+    }
+
+    // Only check if username is valid and different from last check
+    if (formData.username && formData.username.length >= 3) {
+      const timeout = setTimeout(() => {
+        // Only check if username hasn't changed during the timeout
+        if (formData.username && formData.username.length >= 3) {
+          checkUsernameAvailability(formData.username);
+        }
+      }, 1000); // Increased delay to reduce spam
+      setUsernameCheckTimeout(timeout);
+    } else {
+      setUsernameStatus('idle');
+      setUsernameAvailability(null);
+    }
+
+    return () => {
+      if (usernameCheckTimeout) {
+        clearTimeout(usernameCheckTimeout);
+      }
+    };
+  }, [formData.username, checkUsernameAvailability]);
+
+  // Enhanced input handling with sanitization
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Sanitize input based on field type
+    const sanitizedValue = sanitizeInput(value, name);
+    
+    setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+    
+    // Clear field-specific errors
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    
+    // Clear general error when user starts typing
+    if (error) {
+      setError('');
+    }
+    
+    // Reset username status when user starts typing a new username
+    if (name === 'username') {
+      setUsernameStatus('idle');
+      setUsernameAvailability(null);
+      setLastCheckedUsername(''); // Reset last checked username
+    }
+    
+    // Check password strength for password field
+    if (name === 'password') {
+      checkPasswordStrength(sanitizedValue);
+    }
   };
 
-  // Validation functions
+  // Enhanced validation functions
   const validateUsername = (username) => {
     if (!username) return 'Username is required';
     if (username.length < 3) return 'Username must be at least 3 characters';
     if (username.length > 20) return 'Username must be less than 20 characters';
     if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores';
+    if (username.startsWith('_') || username.endsWith('_')) return 'Username cannot start or end with underscore';
+    if (usernameStatus === 'invalid') return 'Username contains invalid characters';
+    if (usernameStatus === 'unavailable') return 'Username is already taken';
+    if (usernameStatus === 'checking') return 'Checking username availability...';
+    if (usernameStatus === 'idle' && username.length >= 3) return 'Please wait while we check availability';
     return '';
   };
 
   const validatePassword = (password) => {
     if (!password) return 'Password is required';
-    if (password.length < 6) return 'Password must be at least 6 characters';
+    if (password.length < 8) return 'Password must be at least 8 characters';
     if (password.length > 128) return 'Password must be less than 128 characters';
+    if (passwordStrength < 3) return 'Password is too weak. Please include more variety.';
     return '';
   };
 
@@ -128,6 +308,12 @@ const Register = ({ mode, setMode }) => {
   const handleNext = () => {
     if (validateCurrentStep()) {
       setActiveStep(prev => prev + 1);
+      // Focus on next input field
+      setTimeout(() => {
+        if (activeStep === 0) {
+          passwordInputRef.current?.focus();
+        }
+      }, 100);
     }
   };
 
@@ -142,11 +328,16 @@ const Register = ({ mode, setMode }) => {
     setError('');
     
     try {
-      await register(formData.username, formData.password);
-      setActiveStep(2); // Success step
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
+      const result = await register(formData.username, formData.password);
+      
+      if (result.success) {
+        setActiveStep(2); // Success step
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      } else {
+        setError(result.error || 'Registration failed. Please try again.');
+      }
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -154,8 +345,39 @@ const Register = ({ mode, setMode }) => {
     }
   };
 
+  // Get username status icon and color
+  const getUsernameStatusIcon = () => {
+    switch (usernameStatus) {
+      case 'checking':
+        return <CircularProgress size={20} />;
+      case 'available':
+        return null; // No icon for available - just the chip below
+      case 'unavailable':
+        return null; // No icon for unavailable - just the tooltip info icon
+      case 'invalid':
+        return null; // No icon for invalid - just the tooltip info icon
+      default:
+        return null;
+    }
+  };
+
+  // Password strength indicator
+  const getPasswordStrengthColor = () => {
+    if (passwordStrength <= 2) return '#EF4444';
+    if (passwordStrength <= 3) return '#F59E0B';
+    if (passwordStrength <= 4) return '#10B981';
+    return '#059669';
+  };
+
+  const getPasswordStrengthLabel = () => {
+    if (passwordStrength <= 2) return 'Weak';
+    if (passwordStrength <= 3) return 'Fair';
+    if (passwordStrength <= 4) return 'Good';
+    return 'Strong';
+  };
+
   // Modern input field styling
-  const getInputSx = () => ({
+  const getInputSx = (fieldName = '') => ({
     mb: 3,
     '& .MuiInputLabel-root': {
       color: mode === 'dark' ? '#B9BBBE' : '#606060',
@@ -177,9 +399,17 @@ const Register = ({ mode, setMode }) => {
         borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(59, 130, 246, 0.4)',
       },
       '&.Mui-focused fieldset': {
-        borderColor: '#3B82F6',
+        borderColor: fieldName === 'username' && usernameStatus === 'available' ? '#10B981' : 
+                    fieldName === 'username' && (usernameStatus === 'unavailable' || usernameStatus === 'invalid') ? '#EF4444' : 
+                    fieldName === 'password' && formData.password && Object.values(passwordRequirements).every(req => req) ? '#10B981' :
+                    fieldName === 'confirmPassword' && formData.confirmPassword && formData.confirmPassword === formData.password ? '#10B981' :
+                    '#3B82F6',
         borderWidth: '2px',
-        boxShadow: `0 0 0 3px rgba(59, 130, 246, 0.1)`,
+        boxShadow: fieldName === 'username' && usernameStatus === 'available' ? '0 0 0 3px rgba(16, 185, 129, 0.1)' : 
+                   fieldName === 'username' && (usernameStatus === 'unavailable' || usernameStatus === 'invalid') ? '0 0 0 3px rgba(239, 68, 68, 0.1)' : 
+                   fieldName === 'password' && formData.password && Object.values(passwordRequirements).every(req => req) ? '0 0 0 3px rgba(16, 185, 129, 0.1)' :
+                   fieldName === 'confirmPassword' && formData.confirmPassword && formData.confirmPassword === formData.password ? '0 0 0 3px rgba(16, 185, 129, 0.1)' :
+                   '0 0 0 3px rgba(59, 130, 246, 0.1)',
       },
       '& input': {
         color: mode === 'dark' ? '#FFFFFF' : '#1F1F1F',
@@ -208,8 +438,10 @@ const Register = ({ mode, setMode }) => {
         return (
           <Box>
             <Typography variant="h6" sx={{ mb: 3, textAlign: 'center', color: mode === 'dark' ? '#FFFFFF' : '#1F1F1F' }}>
-              Choose Your Username
+              Account Details
             </Typography>
+            
+            {/* Username Field */}
             <TextField
               fullWidth
               label="Username"
@@ -219,8 +451,9 @@ const Register = ({ mode, setMode }) => {
               onChange={handleChange}
               error={!!errors.username}
               helperText={errors.username}
-              sx={getInputSx()}
+              sx={getInputSx('username')}
               autoFocus
+              inputRef={usernameInputRef}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -229,6 +462,7 @@ const Register = ({ mode, setMode }) => {
                 ),
                 endAdornment: (
                   <InputAdornment position="end">
+                    {getUsernameStatusIcon()}
                     <Tooltip 
                       title={
                         <Box>
@@ -238,8 +472,8 @@ const Register = ({ mode, setMode }) => {
                           <Typography variant="body2" component="div">
                             • 3-20 characters long<br/>
                             • Letters, numbers, and underscores only<br/>
-                            • Cannot start with a number<br/>
-                            • Choose something memorable!
+                            • Cannot start or end with underscore<br/>
+                            • Must be unique
                           </Typography>
                         </Box>
                       }
@@ -260,6 +494,64 @@ const Register = ({ mode, setMode }) => {
                 )
               }}
             />
+            
+            {/* Username status indicator */}
+            {formData.username && formData.username.length >= 3 && (
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                {usernameStatus === 'checking' && (
+                  <Chip
+                    icon={<CircularProgress size={16} />}
+                    label="Checking availability..."
+                    size="small"
+                    sx={{
+                      bgcolor: mode === 'dark' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+                      color: '#3B82F6',
+                      border: '1px solid rgba(59, 130, 246, 0.2)'
+                    }}
+                  />
+                )}
+                {usernameStatus === 'available' && (
+                  <Chip
+                    icon={<CheckCircleOutline />}
+                    label="Username available!"
+                    size="small"
+                    clickable={false}
+                    sx={{
+                      bgcolor: 'rgba(16, 185, 129, 0.1)',
+                      color: '#10B981',
+                      border: '1px solid rgba(16, 185, 129, 0.2)',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
+                {usernameStatus === 'unavailable' && (
+                  <Chip
+                    label="Username taken"
+                    size="small"
+                    clickable={false}
+                    sx={{
+                      bgcolor: 'rgba(239, 68, 68, 0.1)',
+                      color: '#EF4444',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
+                {usernameStatus === 'invalid' && (
+                  <Chip
+                    label="Invalid username format"
+                    size="small"
+                    clickable={false}
+                    sx={{
+                      bgcolor: 'rgba(239, 68, 68, 0.1)',
+                      color: '#EF4444',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
+              </Box>
+            )}
           </Box>
         );
       
@@ -267,8 +559,10 @@ const Register = ({ mode, setMode }) => {
         return (
           <Box>
             <Typography variant="h6" sx={{ mb: 3, textAlign: 'center', color: mode === 'dark' ? '#FFFFFF' : '#1F1F1F' }}>
-              Create Your Password
+              Security Setup
             </Typography>
+            
+            {/* Password Field */}
             <TextField
               fullWidth
               label="Password"
@@ -278,8 +572,9 @@ const Register = ({ mode, setMode }) => {
               onChange={handleChange}
               error={!!errors.password}
               helperText={errors.password}
-              sx={getInputSx()}
+              sx={getInputSx('password')}
               autoFocus
+              inputRef={passwordInputRef}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -295,10 +590,10 @@ const Register = ({ mode, setMode }) => {
                             Password Requirements:
                           </Typography>
                           <Typography variant="body2" component="div">
-                            • At least 6 characters long<br/>
-                            • Mix of letters and numbers recommended<br/>
-                            • Avoid common passwords<br/>
-                            • Make it unique and secure!
+                            • At least 8 characters long<br/>
+                            • Mix of uppercase and lowercase letters<br/>
+                            • Include numbers and special characters<br/>
+                            • Avoid common passwords
                           </Typography>
                         </Box>
                       }
@@ -329,6 +624,34 @@ const Register = ({ mode, setMode }) => {
               }}
             />
 
+            {/* Password Requirements Checklist */}
+            {formData.password && (
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  {Object.entries(passwordRequirements).map(([req, met]) => (
+                    <Box key={req} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {met ? (
+                        <CheckCircleOutline sx={{ fontSize: 16, color: '#10B981' }} />
+                      ) : (
+                        <InfoOutlined sx={{ fontSize: 16, color: '#EF4444' }} />
+                      )}
+                      <Typography variant="body2" sx={{ 
+                        color: met ? '#10B981' : mode === 'dark' ? '#606060' : '#606060',
+                        fontSize: '0.875rem'
+                      }}>
+                        {req === 'length' && 'At least 8 characters'}
+                        {req === 'lowercase' && 'Contains lowercase letter'}
+                        {req === 'uppercase' && 'Contains uppercase letter'}
+                        {req === 'number' && 'Contains number'}
+                        {req === 'special' && 'Contains special character'}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* Confirm Password Field */}
             <TextField
               fullWidth
               label="Confirm Password"
@@ -338,7 +661,7 @@ const Register = ({ mode, setMode }) => {
               onChange={handleChange}
               error={!!errors.confirmPassword}
               helperText={errors.confirmPassword}
-              sx={getInputSx()}
+              sx={getInputSx('confirmPassword')}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -394,18 +717,49 @@ const Register = ({ mode, setMode }) => {
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <CheckCircle sx={{ fontSize: 80, color: '#10B981', mb: 2 }} />
             <Typography variant="h5" sx={{ mb: 1, color: mode === 'dark' ? '#FFFFFF' : '#1F1F1F' }}>
-              Account Created!
+              Account Created Successfully!
             </Typography>
-            <Typography variant="body1" sx={{ color: mode === 'dark' ? '#B9BBBE' : '#606060' }}>
+            <Typography variant="body1" sx={{ color: mode === 'dark' ? '#B9BBBE' : '#606060', mb: 2 }}>
               Welcome to NexusChat, {formData.username}!
             </Typography>
-            <CircularProgress sx={{ mt: 3, color: '#3B82F6' }} />
+            <Typography variant="body2" sx={{ color: mode === 'dark' ? '#B9BBBE' : '#606060', mb: 3 }}>
+              Redirecting you to your dashboard...
+            </Typography>
+            <CircularProgress sx={{ color: '#3B82F6' }} />
           </Box>
         );
       
       default:
         return null;
     }
+  };
+
+  // Check if we can proceed to next step
+  const canProceedToNext = () => {
+    if (activeStep === 0) {
+      return formData.username && 
+             formData.username.length >= 3 && 
+             usernameStatus === 'available' && 
+             !errors.username;
+    }
+    return true;
+  };
+
+  // Reset form when going back to first step
+  const handleBackToFirst = () => {
+    setActiveStep(0);
+    setErrors({});
+    setError('');
+    setUsernameStatus('idle');
+    setUsernameAvailability(null);
+    setPasswordStrength(0);
+    setPasswordRequirements({
+      length: false,
+      lowercase: false,
+      uppercase: false,
+      number: false,
+      special: false
+    });
   };
 
   return (
@@ -422,7 +776,7 @@ const Register = ({ mode, setMode }) => {
         justifyContent: 'center'
       }}
     >
-             {/* Clean background - no particles needed */}
+      {/* Clean background - no particles needed */}
 
       {/* Theme toggle */}
       <IconButton
@@ -486,7 +840,7 @@ const Register = ({ mode, setMode }) => {
                 : '0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.05)',
               position: 'relative',
               zIndex: 2,
-              maxWidth: '480px',
+              maxWidth: '520px',
               margin: '0 auto'
             }}
           >
@@ -563,6 +917,7 @@ const Register = ({ mode, setMode }) => {
                   borderRadius: '12px',
                   bgcolor: mode === 'dark' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)'
                 }}
+                onClose={() => setError('')}
               >
                 {error}
               </Alert>
@@ -575,22 +930,21 @@ const Register = ({ mode, setMode }) => {
             {activeStep < 2 && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
                 <Button
-                  onClick={handleBack}
-                  disabled={activeStep === 0}
+                  onClick={activeStep === 0 ? handleBackToFirst : handleBack}
                   startIcon={<ArrowBack />}
                   sx={{
                     color: mode === 'dark' ? '#B9BBBE' : '#606060',
-                    '&:disabled': {
-                      color: mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'
+                    '&:hover': {
+                      bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(59, 130, 246, 0.1)',
                     }
                   }}
                 >
-                  Back
+                  {activeStep === 0 ? 'Cancel' : 'Back'}
                 </Button>
 
                 <Button
                   onClick={activeStep === 1 ? handleSubmit : handleNext}
-                  disabled={loading}
+                  disabled={loading || !canProceedToNext()}
                   endIcon={activeStep === 1 ? undefined : <ArrowForward />}
                   variant="contained"
                   sx={{
